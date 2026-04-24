@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Octante — Monitor FIDC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bd:   #0B1F3A;
+  --bm:   #1F4E79;
+  --ba:   #3B82F6;
+  --bl:   #EFF6FF;
+  --bb:   #BFDBFE;
+  --w:    #FFFFFF;
+  --bg:   #F5F7FA;
+  --bdr:  #E5E7EB;
+  --bdr2: #D1D5DB;
+  --t:    #111827;
+  --tm:   #374151;
+  --ts:   #6B7280;
+  --tl:   #9CA3AF;
+  --g:    #10B981; --gb: #ECFDF5; --gbr: #6EE7B7;
+  --a:    #F59E0B; --ab: #FFFBEB; --abr: #FCD34D;
+  --r:    #EF4444; --rb: #FEF2F2; --rbr: #FCA5A5;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --rad: 10px; --rads: 6px; --radl: 14px;
+  --sh0: 0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh1: 0 2px 8px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.05);
+  --sh2: 0 4px 16px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t);font-family:var(--font);font-size:13px;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:300;height:60px;display:flex;align-items:center;gap:18px;padding:0 28px;background:var(--bd);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 1px 8px rgba(0,0,0,.2)}
+.logo-svg{height:20px;width:auto;flex-shrink:0}
+.hdr-div{width:1px;height:24px;background:rgba(255,255,255,.15);flex-shrink:0}
+.fund-tabs{display:flex;gap:2px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:3px;flex-shrink:0}
+.ftab{position:relative;padding:5px 15px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.45);transition:all .15s;white-space:nowrap;font-family:var(--font)}
+.ftab:hover{color:rgba(255,255,255,.85)}
+.ftab.active{background:var(--ba);color:#fff;box-shadow:0 1px 4px rgba(59,130,246,.4)}
+.ftab .dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--g);display:none;box-shadow:0 0 4px var(--g)}
+.ftab.has-data .dot{display:block}
+.ftab.active .dot{background:#fff;opacity:.6;box-shadow:none}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ref-pill{font-size:11px;font-weight:500;color:rgba(255,255,255,.55);padding:4px 12px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:rgba(255,255,255,.06);white-space:nowrap}
+.ref-pill b{color:#fff;font-weight:600}
+.btn-h{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:6px 13px;font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-h:hover{background:rgba(255,255,255,.15);color:#fff}
+.btn-h.btn-email{background:rgba(59,130,246,.25);border-color:rgba(59,130,246,.5);color:#93c5fd}
+.btn-h.btn-email:hover{background:rgba(59,130,246,.4);color:#fff}
+
+/* ── TABS NAV ── */
+.tab-nav{display:flex;gap:0;border-bottom:1px solid var(--bdr);background:var(--w);padding:0 28px;position:sticky;top:60px;z-index:200}
+.tnav{padding:12px 16px;font-size:12px;font-weight:500;color:var(--ts);cursor:pointer;border:none;background:transparent;font-family:var(--font);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;display:flex;align-items:center;gap:7px}
+.tnav:hover{color:var(--ba)}
+.tnav.active{color:var(--ba);border-bottom-color:var(--ba);font-weight:600}
+.tnav svg{flex-shrink:0}
+
+/* ── UPLOAD ── */
+#upload-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:32px;animation:fadeUp .4s ease both}
+.upload-box{width:100%;max-width:480px;background:var(--w);border:1px solid var(--bdr);border-radius:var(--radl);padding:48px 44px;text-align:center;box-shadow:var(--sh2);position:relative;overflow:hidden}
+.upload-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--bm),var(--ba))}
+.upload-ico{width:56px;height:56px;margin:0 auto 20px;background:var(--bl);border:1px solid var(--bb);border-radius:14px;display:flex;align-items:center;justify-content:center}
+.upload-ico svg{stroke:var(--ba);width:24px;height:24px}
+.fund-pill-up{display:inline-block;margin-bottom:14px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ba);background:var(--bl);border:1px solid var(--bb);border-radius:20px;padding:4px 12px}
+.upload-box h2{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--bd);margin-bottom:8px}
+.upload-box p{font-size:12px;color:var(--ts);line-height:1.8;margin-bottom:24px}
+.upload-box p strong{color:var(--ba);font-weight:600}
+.drop-zone{border:1.5px dashed var(--bdr2);border-radius:var(--rad);padding:22px 16px;cursor:pointer;background:var(--bg);margin-bottom:14px;transition:all .2s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--ba);background:var(--bl)}
+.drop-zone p{font-size:12px;color:var(--ts);margin:0}
+.drop-zone p strong{color:var(--ba)}
+#file-input{display:none}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--ba);color:#fff;border:none;border-radius:var(--rads);padding:10px 24px;font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(59,130,246,.3)}
+.btn-primary:hover{background:#2563EB;transform:translateY(-1px)}
+#err-msg{display:none;margin-top:12px;padding:10px 14px;background:var(--rb);border:1px solid var(--rbr);border-radius:var(--rads);font-size:11px;color:var(--r);text-align:left}
+
+/* ── DASHBOARD ── */
+#dashboard{display:none}
+.dash-section{padding:20px 28px 40px;animation:fadeUp .35s ease both}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--bdr)}
+.fund-heading{font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--bd);line-height:1.1}
+.fund-heading em{color:var(--ba);font-style:normal}
+.fund-sub{font-size:11px;color:var(--ts);margin-top:4px}
+.topbar-r{display:flex;gap:8px;align-items:center;flex-shrink:0;margin-top:2px}
+.btn-outline{display:inline-flex;align-items:center;gap:6px;background:var(--w);color:var(--ts);border:1px solid var(--bdr2);border-radius:var(--rads);padding:6px 13px;font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-outline:hover{color:var(--bd);border-color:var(--ba);background:var(--bl)}
+.btn-action{display:inline-flex;align-items:center;gap:6px;background:var(--ba);color:#fff;border:none;border-radius:var(--rads);padding:6px 13px;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 4px rgba(59,130,246,.3)}
+.btn-action:hover{background:#2563EB}
+.btn-whats{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border:none;border-radius:var(--rads);padding:6px 13px;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-whats:hover{background:#128C7E}
+
+/* ── GRIDS ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 300px;gap:12px;margin-bottom:12px}
+.g4r{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+
+/* ── CARD ── */
+.card{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);padding:18px;box-shadow:var(--sh0);transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:var(--sh1);border-color:var(--bdr2)}
+.kpi-ico{width:32px;height:32px;border-radius:var(--rads);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ts);margin-bottom:5px}
+.kpi-val{font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1;margin-bottom:3px;color:var(--bd);font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:10px;color:var(--tl)}
+
+/* ── PCT CARD ── */
+.pct-card{background:var(--bd);border:1px solid var(--bm);border-radius:var(--rad);padding:22px 24px;box-shadow:var(--sh1);position:relative;overflow:hidden}
+.pct-card::before{content:'';position:absolute;top:0;right:0;width:180px;height:180px;background:radial-gradient(circle at top right,rgba(59,130,246,.18) 0%,transparent 65%);pointer-events:none}
+.pct-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px}
+.pct-num{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1;color:#fff;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.pct-bar-bg{height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.pct-bar{height:100%;border-radius:2px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
+.pct-note{font-size:10px;color:rgba(255,255,255,.35)}
+
+/* ── DC LIQ ── */
+.dcliq{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);padding:20px;box-shadow:var(--sh0);display:flex;flex-direction:column;gap:12px}
+.dcliq-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ts)}
+.dcliq-val{font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--bd);line-height:1.3;font-variant-numeric:tabular-nums}
+.dcliq-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bdr)}
+.dcliq-row:last-child{border-bottom:none}
+.dcliq-rl{font-size:10px;color:var(--ts)}
+.dcliq-rv{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── SEC TITLE ── */
+.sec{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ts);display:flex;align-items:center;gap:10px;margin:20px 0 10px}
+.sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+/* ── IND CARD ── */
+.ind{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);padding:18px;box-shadow:var(--sh0);position:relative;overflow:hidden;transition:box-shadow .2s}
+.ind:hover{box-shadow:var(--sh1)}
+.ind::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.ind.green::before{background:var(--g)}.ind.amber::before{background:var(--a)}.ind.red::before{background:var(--r)}
+.ind-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ts);margin-bottom:12px}
+.ind-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px}
+.ind-val{font-size:28px;font-weight:700;letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums}
+.ind-val.green{color:var(--g)}.ind-val.amber{color:var(--a)}.ind-val.red{color:var(--r)}
+.ind-min{text-align:right}
+.ind-min-lbl{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tl)}
+.ind-min-val{font-size:13px;font-weight:700;color:var(--tm);margin-top:2px}
+.ind-bar-bg{height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.ind-bar{height:100%;border-radius:2px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.ind-bar.green{background:var(--g)}.ind-bar.amber{background:var(--a)}.ind-bar.red{background:var(--r)}
+.ind-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.ind-badge.green{background:var(--gb);color:var(--g);border:1px solid var(--gbr)}
+.ind-badge.amber{background:var(--ab);color:var(--a);border:1px solid var(--abr)}
+.ind-badge.red{background:var(--rb);color:var(--r);border:1px solid var(--rbr)}
+.ind-dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);overflow:hidden;box-shadow:var(--sh0);margin-bottom:12px}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--bdr);background:var(--bg)}
+.tbl-ht{font-size:12px;font-weight:700;color:var(--bd)}
+.tbl-hs{font-size:10px;color:var(--ts);font-weight:500}
+table{width:100%;border-collapse:collapse}
+thead th{padding:8px 14px;text-align:right;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ts);border-bottom:1px solid var(--bdr);background:var(--bg)}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--bdr);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bl)}
+tbody td{padding:10px 14px;font-size:12px;color:var(--t);text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+tbody td:first-child{text-align:left;color:var(--tm);font-weight:500}
+.td-pos{color:var(--g)!important}.td-neg{color:var(--r)!important}
+.tr-tot td{font-weight:700!important;color:var(--bd)!important;background:var(--bl)!important;border-top:1px solid var(--bb)!important}
+.tr-tot td:first-child{color:var(--bd)!important}
+
+/* ── STRESS TABLES ── */
+.stress-box{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);overflow:hidden;box-shadow:var(--sh0);margin-bottom:12px}
+.stress-hd{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--bdr)}
+.stress-hd.integr{background:#EFF6FF}.stress-hd.perda{background:var(--rb)}
+.stress-ht{font-size:12px;font-weight:700;color:var(--bd)}
+.stress-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.stress-badge.integr{background:var(--bl);color:var(--ba);border:1px solid var(--bb)}
+.stress-badge.perda{background:var(--rb);color:var(--r);border:1px solid var(--rbr)}
+.stress-note{font-size:10px;color:var(--ts);margin-left:auto}
+.stress-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.sc{padding:18px;border-right:1px solid var(--bdr)}
+.sc:last-child{border-right:none}
+.sc-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ts);margin-bottom:7px}
+.sc-val{font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px;font-variant-numeric:tabular-nums}
+.sc-sub{font-size:10px;color:var(--tl);margin-bottom:10px}
+.sc-meta{font-size:10px;color:var(--ts);line-height:2}
+.sc-meta span{color:var(--t);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── CHARTS TAB ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:var(--w);border:1px solid var(--bdr);border-radius:var(--rad);padding:20px;box-shadow:var(--sh0)}
+.chart-title{font-size:12px;font-weight:700;color:var(--bd);margin-bottom:4px}
+.chart-sub{font-size:10px;color:var(--ts);margin-bottom:16px}
+.chart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--ts);font-size:12px;text-align:center;gap:8px}
+.chart-empty svg{opacity:.3}
+
+/* ── EMAIL MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--w);border-radius:var(--radl);width:100%;max-width:680px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bdr);background:var(--bd)}
+.modal-hdr h3{font-size:14px;font-weight:700;color:#fff}
+.modal-close{background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.modal-close:hover{background:rgba(255,255,255,.2)}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+.field-group{margin-bottom:14px}
+.field-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ts);margin-bottom:5px}
+.field-input{width:100%;padding:8px 12px;border:1px solid var(--bdr2);border-radius:var(--rads);font-family:var(--font);font-size:12px;color:var(--t);background:var(--w);transition:border-color .15s;resize:none}
+.field-input:focus{outline:none;border-color:var(--ba);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.email-preview{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rad);padding:18px;font-size:12px;line-height:1.8;color:var(--t);white-space:pre-wrap;font-family:var(--font);max-height:280px;overflow-y:auto}
+.modal-ftr{padding:14px 22px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;background:var(--bg)}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:16px 28px;border-top:1px solid var(--bdr);font-size:10px;color:var(--tl);letter-spacing:.05em;background:var(--w)}
+
+/* ── ANIM ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .35s ease both}
+.anim:nth-child(1){animation-delay:.04s}.anim:nth-child(2){animation-delay:.08s}
+.anim:nth-child(3){animation-delay:.12s}.anim:nth-child(4){animation-delay:.16s}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1200px){
+  .g4,.g4r,.stress-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-grid{grid-template-columns:1fr}
+  .sc:nth-child(2){border-right:none}.sc:nth-child(3){border-top:1px solid var(--bdr);border-right:1px solid var(--bdr)}.sc:nth-child(4){border-top:1px solid var(--bdr);border-right:none}
+}
+@media(max-width:900px){
+  header{padding:0 16px;gap:10px}
+  .dash-section{padding:14px 16px 32px}
+  .g4,.g2,.g4r,.g2c{grid-template-columns:1fr}
+  .stress-grid{grid-template-columns:1fr}
+  .sc{border-right:none;border-bottom:1px solid var(--bdr)}.sc:last-child{border-bottom:none}
+  .tab-nav{padding:0 14px;overflow-x:auto}
+}
+
+/* ── PRINT INSTITUCIONAL ── */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  header,.tab-nav,#upload-screen,.topbar-r,.hdr-r,.fund-tabs,.hdr-div,
+  .modal-overlay,.btn-outline,.btn-action,.btn-h,.btn-whats,footer{display:none!important}
+  body{background:#fff!important;font-size:11px!important;margin:0!important;padding:0!important}
+  #dashboard{display:block!important}
+  .tab-panel{display:block!important;page-break-after:always}
+  #tab-charts .chart-grid{grid-template-columns:1fr 1fr!important}
+  #tab-estoque{display:none!important}
+  #print-header{display:block!important}
+  .dash-section{padding:4px 14px 16px!important}
+  .g4,.g4r{grid-template-columns:repeat(4,1fr)!important;gap:8px!important}
+  .g2{grid-template-columns:1fr 250px!important;gap:8px!important}
+  .stress-grid{grid-template-columns:repeat(4,1fr)!important}
+  .sc{border-right:1px solid #E5E7EB!important;border-bottom:none!important}
+  .card,.ind,.tbl-wrap,.stress-box,.dcliq,.pct-card{box-shadow:none!important;page-break-inside:avoid!important}
+  .pct-card{background:#0B1F3A!important}
+  .pct-num{color:#fff!important;font-size:30px!important}
+  .ind-val.green{color:#10B981!important}
+  .ind-val.amber{color:#F59E0B!important}
+  .ind-val.red{color:#EF4444!important}
+  .ind.green::before,.ind.amber::before,.ind.red::before{display:block!important}
+  @page{margin:10mm 12mm 10mm;size:A4}
+}
+/* Chart canvas — explicit sizing ensures Chart.js can measure */
+.chart-card canvas { display:block; box-sizing:border-box; }
+.tab-panel { min-height:0; }
+.chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <svg class="logo-svg" viewBox="0 0 150 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <mask id="ma" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="9" y="16" width="7" height="10"><path d="M12.36 17.5446C12.1631 18.0182 9.84697 23.836 9.84697 23.836C9.68634 24.2537 9.38374 24.5521 9.34436 24.7366C11.0698 25.2361 12.5621 25.5377 14.4109 25.6485V25.0402C15.1041 25.0402 15.6886 24.3532 15.7062 23.9335C15.6244 20.4743 15.7788 18.3146 15.7425 16.5311C14.5383 16.5798 13.387 16.9218 12.361 17.5446" fill="white"/></mask><g mask="url(#ma)"><path d="M12.5626 13.3137L4.78638 21.09L12.5626 28.8662L20.3389 21.09L12.5626 13.3137Z" fill="white"/></g>
+    <mask id="mb" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="33" height="33"><path d="M8.62931 23.3894L15.3601 6.46965C14.8938 6.14322 14.5984 5.60123 14.5984 4.99188C14.5984 4.01568 15.3726 3.21876 16.3394 3.1856C17.3053 3.21876 18.0794 4.01672 18.0794 4.99188C18.0794 5.50796 17.8669 5.97741 17.5198 6.30695L24.5159 22.8143C24.5159 22.9055 24.6993 23.3303 25.062 24.0889C25.5636 23.8993 26.0589 23.692 26.5491 23.464C26.8724 23.32 27.3968 23.4226 27.3947 23.7158C27.3927 24.0112 27.259 24.1677 26.9398 24.3262C26.4994 24.5387 25.9999 24.7387 25.546 24.9252L23.6713 25.5739C21.7064 26.2144 19.496 26.5947 17.4161 26.7222V27.7927H14.4098V26.7222C12.3289 26.5937 10.5475 26.2144 8.58268 25.5739C8.58268 25.5739 8.12256 25.3563 7.81892 25.2382C7.09662 24.9656 6.38468 24.6641 5.68517 24.3262C5.36702 24.1677 5.25718 24.0112 5.25718 23.7158C5.25718 23.4205 5.81264 23.32 6.13596 23.464C6.94946 23.8433 7.3215 24.1687 8.16505 24.4495C8.31428 24.1801 8.46661 23.8298 8.62931 23.3894ZM5.3349 0C2.38868 0 0 2.38868 0 5.3349V27.4921C0 30.4384 2.38868 32.827 5.3349 32.827H27.4921C30.4384 32.827 32.827 30.4384 32.827 27.4921V5.3349C32.827 2.38868 30.4384 0 27.4921 0H5.33593H5.3349Z" fill="white"/></mask><g mask="url(#mb)"><path d="M16.4149 -16.4148L-16.4128 16.413L16.4149 49.2407L49.2426 16.413L16.4149 -16.4148Z" fill="white"/></g>
+    <mask id="mc" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="16" y="10" width="4" height="7"><path d="M16.9529 15.7901C17.6597 15.899 18.4504 16.1311 19.523 16.4896C19.0846 15.4233 17.9177 12.6014 17.0638 10.5371C17.0172 12.6543 16.9882 14.101 16.9529 15.7901Z" fill="white"/></mask><g mask="url(#mc)"><path d="M18.238 9.25305L13.9769 13.5142L18.238 17.7753L22.4991 13.5142L18.238 9.25305Z" fill="white"/></g>
+    <mask id="md" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="12" y="9" width="4" height="8"><path d="M12.8543 16.3964C14.0751 15.9985 14.9228 15.7767 15.7249 15.728C15.6845 13.786 15.6523 12.1497 15.5902 9.41901C14.73 11.617 13.0222 15.9778 12.8543 16.3964Z" fill="white"/></mask><g mask="url(#md)"><path d="M14.2897 7.98302L9.36548 12.9073L14.2897 17.8316L19.214 12.9073L14.2897 7.98302Z" fill="white"/></g>
+    <mask id="me" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="16" y="16" width="7" height="10"><path d="M16.5498 23.9345C16.5633 24.3543 16.7218 25.0413 17.4162 25.0413V25.6517C19.0349 25.5522 20.8297 25.2973 22.3894 24.8828C22.3904 24.8693 22.6143 24.8538 22.6143 24.8382C22.6143 24.5999 22.5055 24.2164 22.2878 23.6972C22.2474 23.6579 22.2163 23.5936 22.1873 23.5117C22.1676 23.4164 22.1541 23.3687 22.1469 23.3687C22.1469 23.3687 20.1976 18.3167 19.8971 17.5457C18.9001 17.0151 17.8255 16.697 16.8244 16.5768C16.7871 18.353 16.6296 20.5044 16.5498 23.9345Z" fill="white"/></mask><g mask="url(#me)"><path d="M19.5829 13.5441L12.0126 21.1144L19.5829 28.6848L27.1532 21.1144L19.5829 13.5441Z" fill="white"/></g>
+    <mask id="mf" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="150" height="33"><path d="M150 0H0.0010376V32.827H150V0Z" fill="white"/></mask>
+    <g mask="url(#mf)">
+      <path d="M49.7457 5.28406C54.6806 5.28406 57.9387 8.85724 57.9387 14.0118C57.9387 19.1664 54.6806 23.2992 49.4535 23.2992C44.2263 23.2992 41.2604 19.4576 41.2604 14.5953C41.2604 8.73599 45.2958 5.28406 49.7457 5.28406ZM49.3073 6.52348C46.1466 6.52348 43.9828 9.22202 43.9828 13.817C43.9828 18.1197 46.0492 22.0349 49.8182 22.0349C53.295 22.0349 55.2153 19.2628 55.2153 15.0575C55.2153 10.2438 53.2215 6.52348 49.3073 6.52348Z" fill="white"/>
+      <path d="M61.8394 14.2305C61.8394 19.3613 65.0965 21.4028 68.0635 21.4028C69.8874 21.4028 71.3703 20.7468 72.245 20.2359C72.4387 20.1147 72.7071 19.9934 72.8284 19.9934C73.1206 19.9934 73.3144 20.2856 73.3144 20.5033C73.3144 20.6245 73.2657 20.7706 73.0958 20.9168C72.0988 21.7924 70.0324 23.2992 67.2116 23.2992C63.4913 23.2992 59.2859 20.7468 59.2859 14.6689C59.2859 9.31946 62.6653 5.30896 69.3029 5.30896C70.3723 5.30896 71.4916 5.47892 72.1475 5.77012C72.5362 5.94007 72.6823 6.11106 72.731 6.57222C72.8284 7.35048 72.8771 8.73602 72.8771 9.00339C72.8771 9.392 72.7071 9.56196 72.4159 9.56196C72.0999 9.56196 71.9776 9.44071 71.7102 8.95468C71.0294 7.76293 70.6407 7.2282 70.2521 6.9857C69.8874 6.74217 69.0365 6.62092 68.0883 6.62092C63.9307 6.62092 61.8404 10.049 61.8404 14.2305" fill="white"/>
+      <path d="M87.975 5.69763C88.2185 5.69763 88.3398 5.81888 88.3398 6.06241C88.3875 7.22929 88.4372 9.07702 88.4372 9.34439C88.4372 9.56305 88.3885 9.78171 88.0237 9.78171C87.805 9.78171 87.6102 9.63663 87.5138 9.41693C86.8817 7.83657 86.5895 7.32567 86.2495 7.13188C85.9086 6.93705 85.52 6.83964 84.1096 6.83964C83.065 6.83964 82.6028 6.88835 82.4805 7.08214C82.3593 7.25209 82.3344 7.49562 82.3344 7.95781C82.3106 9.12469 82.2857 17.8038 82.2857 20.1624C82.2857 20.8194 82.3095 21.2318 82.5043 21.4515C82.6992 21.6702 83.0878 21.7676 84.1572 22.1075C84.4008 22.1801 84.4982 22.3024 84.4982 22.521C84.4982 22.862 84.3034 22.9096 84.1085 22.9096C83.865 22.9096 82.4556 22.8371 81.0204 22.8371C79.5851 22.8371 78.6628 22.9096 78.3457 22.9096C78.127 22.9096 77.9322 22.8371 77.9322 22.521C77.9322 22.3024 78.0047 22.2049 78.2482 22.1075C79.0514 21.8402 79.4638 21.7427 79.7312 21.5002C79.926 21.3054 79.926 20.8443 79.926 20.3085C79.926 17.9986 79.8286 9.02728 79.8048 7.98269C79.8048 7.49666 79.7561 7.22929 79.6348 7.08214C79.5136 6.91218 79.0752 6.83964 78.0306 6.83964C76.6202 6.83964 76.2067 6.88835 75.7694 7.22929C75.5269 7.42308 75.2347 7.83657 74.5538 9.46564C74.4574 9.6843 74.2864 9.78171 74.0678 9.78171C73.7517 9.78171 73.6543 9.53922 73.6543 9.29568C73.6543 8.97961 73.8004 6.74326 73.873 6.06241C73.8968 5.81888 73.9704 5.69763 74.2139 5.69763C75.1383 5.69763 78.2016 5.74634 81.0463 5.74634C83.8909 5.74634 87.2941 5.69763 87.975 5.69763Z" fill="white"/>
+      <path d="M92.1088 16.3705C90.9658 19.239 90.5284 20.4308 90.5284 21.038C90.5284 21.2805 90.6259 21.5241 90.8207 21.6453C91.0881 21.7914 91.4528 21.8888 92.2311 22.0837C92.5223 22.1562 92.6922 22.2287 92.6922 22.5697C92.6922 22.7158 92.5461 22.9106 92.3275 22.9106C92.0352 22.9106 90.4549 22.8619 89.5554 22.8619C88.9232 22.8619 87.2693 22.9106 86.9294 22.9106C86.7345 22.9106 86.5159 22.8132 86.5159 22.521C86.5159 22.2536 86.7107 22.1313 86.8558 22.1075C88.1201 21.7914 88.4123 21.5728 89.3844 19.2628C90.9647 15.4461 93.3234 9.58582 94.7814 5.98777C94.9763 5.47687 95.1949 5.28308 95.5597 5.28308C95.8996 5.28308 96.0696 5.47687 96.2157 5.91523C97.0914 8.56506 98.136 11.6284 101.029 19.4815C101.831 21.6204 102.147 21.7914 103.484 22.1075C103.63 22.1313 103.8 22.2536 103.8 22.521C103.8 22.8132 103.606 22.9106 103.436 22.9106C103.095 22.9106 101.66 22.8619 100.786 22.8619C99.9112 22.8619 97.2364 22.9106 96.9442 22.9106C96.7255 22.9106 96.5794 22.7158 96.5794 22.5459C96.5794 22.2049 96.7494 22.1572 97.0416 22.0847C97.9173 21.8899 98.4272 21.7686 98.622 21.6225C98.7681 21.5013 98.8894 21.3313 98.8894 21.0639C98.8894 20.408 98.3059 18.924 97.3826 16.3715H92.1067L92.1088 16.3705ZM97.0199 15.2036C96.0955 12.5289 95.2457 10.1465 94.8809 9.10187C94.4187 10.3413 93.6405 12.2864 92.5223 15.2036H97.0199Z" fill="white"/>
+      <path d="M107.968 20.3572C107.992 20.8919 108.066 21.2816 108.261 21.4754C108.552 21.7427 109.111 21.9127 109.987 22.0827C110.231 22.1314 110.328 22.3013 110.328 22.521C110.328 22.8371 110.133 22.9096 109.915 22.9096C109.599 22.9096 108.553 22.8371 107.191 22.8371C105.757 22.8371 104.809 22.9096 104.565 22.9096C104.37 22.9096 104.103 22.8371 104.103 22.4961C104.103 22.2526 104.2 22.1314 104.444 22.0578C105.392 21.8142 105.902 21.6443 106.048 21.4256C106.243 21.1583 106.267 20.8184 106.292 20.1852C106.389 16.1011 106.437 10.2657 106.437 8.29668C106.437 7.78578 106.316 7.49458 106.169 7.32463C105.853 6.95985 105.124 6.69248 104.298 6.52253C104.054 6.47382 103.982 6.30387 103.982 6.08417C103.982 5.7681 104.177 5.69556 104.395 5.69556C104.711 5.69556 105.343 5.74426 106.608 5.74426C106.973 5.74426 107.653 5.72043 107.969 5.72043C108.358 5.72043 108.528 5.84167 108.796 6.23029C109.721 7.51945 113.173 12.1383 117.865 18.3623C117.744 15.0078 117.719 10.8988 117.598 8.41897C117.573 7.66557 117.477 7.30079 117.233 7.1298C116.917 6.86244 116.357 6.71632 115.629 6.54636C115.385 6.49766 115.288 6.30283 115.288 6.08417C115.288 5.7681 115.483 5.69556 115.701 5.69556C116.017 5.69556 117.014 5.7681 118.376 5.7681C119.81 5.7681 120.758 5.69556 121.002 5.69556C121.197 5.69556 121.392 5.74426 121.392 6.08417C121.392 6.30283 121.294 6.47382 121.051 6.54636C120.103 6.81373 119.664 6.93498 119.47 7.20234C119.324 7.421 119.276 7.81066 119.252 8.4428C119.179 11.0201 119.179 13.6699 119.179 15.7125C119.179 18.9468 119.3 21.694 119.3 22.6899C119.3 23.1283 119.033 23.2247 118.814 23.2247C118.571 23.2247 118.353 23.1521 118.207 22.9324C115.703 19.4556 109.965 11.8212 107.753 8.92883C107.825 15.5177 107.874 18.5323 107.972 20.3562" fill="white"/>
+      <path d="M136.074 5.69763C136.318 5.69763 136.439 5.81888 136.439 6.06241C136.487 7.22929 136.536 9.07702 136.536 9.34439C136.536 9.56305 136.488 9.78171 136.123 9.78171C135.904 9.78171 135.709 9.63663 135.613 9.41693C134.981 7.83657 134.689 7.32567 134.349 7.13188C134.008 6.93705 133.619 6.83964 132.209 6.83964C131.164 6.83964 130.702 6.88835 130.58 7.08214C130.458 7.25209 130.433 7.49562 130.433 7.95781C130.41 9.12469 130.385 17.8038 130.385 20.1624C130.385 20.8194 130.409 21.2318 130.603 21.4515C130.798 21.6702 131.187 21.7676 132.256 22.1075C132.5 22.1801 132.597 22.3024 132.597 22.521C132.597 22.862 132.402 22.9096 132.208 22.9096C131.964 22.9096 130.555 22.8371 129.119 22.8371C127.684 22.8371 126.762 22.9096 126.445 22.9096C126.226 22.9096 126.031 22.8371 126.031 22.521C126.031 22.3024 126.104 22.2049 126.347 22.1075C127.15 21.8402 127.563 21.7427 127.83 21.5002C128.025 21.3054 128.025 20.8443 128.025 20.3085C128.025 17.9986 127.928 9.02728 127.904 7.98269C127.904 7.49666 127.855 7.22929 127.734 7.08214C127.613 6.91218 127.174 6.83964 126.13 6.83964C124.719 6.83964 124.306 6.88835 123.868 7.22929C123.626 7.42308 123.334 7.83657 122.653 9.46564C122.556 9.6843 122.386 9.78171 122.167 9.78171C121.851 9.78171 121.753 9.53922 121.753 9.29568C121.753 8.97961 121.899 6.74326 121.972 6.06241C121.996 5.81888 122.069 5.69763 122.313 5.69763C123.237 5.69763 126.301 5.74634 129.145 5.74634C131.99 5.74634 135.393 5.69763 136.074 5.69763Z" fill="white"/>
+      <path d="M144.674 13.3311C145.209 13.2824 145.695 13.1849 145.89 12.9901C146.133 12.7227 146.23 12.3341 146.522 11.532C146.595 11.2885 146.717 11.1911 146.983 11.1911C147.299 11.1911 147.373 11.3859 147.373 11.6046C147.373 11.9206 147.349 12.674 147.349 13.7684C147.349 15.2026 147.373 16.0783 147.373 16.3208C147.373 16.5156 147.324 16.7581 146.983 16.7581C146.741 16.7581 146.595 16.5882 146.522 16.3446C146.157 15.3239 146.036 15.0803 145.841 14.9104C145.623 14.7156 145.185 14.6679 144.552 14.6192C143.871 14.5705 141.805 14.4979 141.124 14.4979C141.1 15.0814 141.1 17.9986 141.1 19.5302C141.1 20.551 141.124 21.0132 141.489 21.2806C142 21.694 143.434 21.7189 144.747 21.7189C146.619 21.7189 147.275 21.5241 147.762 21.1116C148.004 20.9168 148.369 20.236 148.905 18.9717C149.001 18.7281 149.172 18.6069 149.414 18.6069C149.754 18.6069 149.852 18.8017 149.852 19.0452C149.852 19.3613 149.73 21.2339 149.609 22.522C149.584 22.7656 149.463 22.9117 149.22 22.9117C146.594 22.9117 140.443 22.863 140.03 22.863C138.668 22.863 137.501 22.9117 137.185 22.9117C136.966 22.9117 136.771 22.8392 136.771 22.522C136.771 22.3034 136.844 22.1811 137.088 22.1086C137.89 21.8412 138.279 21.7438 138.546 21.5013C138.74 21.3075 138.74 20.8453 138.74 20.3106C138.74 18.0006 138.643 10.0024 138.643 8.25109C138.643 7.71635 138.619 7.3267 138.449 7.13292C138.206 6.86555 137.792 6.79197 136.991 6.5246C136.748 6.45206 136.675 6.30594 136.675 6.08728C136.675 5.77121 136.869 5.69763 137.089 5.69763C137.405 5.69763 138.475 5.74634 139.787 5.74634C140.201 5.74634 145.623 5.69763 148.248 5.69763C148.491 5.69763 148.612 5.81888 148.637 6.08728C148.71 7.47282 148.758 8.90707 148.758 9.17547C148.758 9.36926 148.662 9.56409 148.345 9.56409C148.101 9.56409 147.956 9.49155 147.834 9.24801C147.324 8.15368 147.056 7.64278 146.862 7.42412C146.472 6.96296 146.059 6.81684 143.02 6.81684C141.78 6.81684 141.464 6.88938 141.343 7.01167C141.173 7.18162 141.197 7.37645 141.173 7.83864C141.124 9.51642 141.124 10.9994 141.124 13.4792C141.61 13.4792 143.92 13.4067 144.673 13.3331" fill="white"/>
+      <path d="M150 27.1315C150 27.1315 129.21 30.0259 95.5421 30.0259C61.8746 30.0259 41.1081 27.1512 41.1081 27.1512V26.6341C41.1081 26.6341 56.4879 28.6881 95.5556 28.6881C134.623 28.6881 150 26.6341 150 26.6341V27.1315Z" fill="white"/>
+    </g>
+  </svg>
+
+  <div class="hdr-div"></div>
+  <div class="fund-tabs" id="fund-tabs">
+    <button class="ftab active" onclick="switchFund(0)"><span class="dot"></span>Cedar</button>
+    <button class="ftab"        onclick="switchFund(1)"><span class="dot"></span>Percapital</button>
+    <button class="ftab"        onclick="switchFund(2)"><span class="dot"></span>Domus</button>
+  </div>
+  <div class="hdr-r">
+    <div class="ref-pill">Posição: <b id="ref-date">—</b></div>
+    <button class="btn-h" onclick="document.getElementById('file-input').click()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar
+    </button>
+    <button class="btn-h btn-email" onclick="openEmailModal()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Enviar E-mail
+    </button>
+    <button class="btn-h" style="background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.4);color:#4ade80" onclick="openWhatsApp()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp
+    </button>
+    <button class="btn-h" onclick="openPrintPage()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir
+    </button>
+  </div>
+</header>
+
+<!-- ══ UPLOAD ══ -->
+<div id="upload-screen">
+  <div class="upload-box">
+    <div class="upload-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <div class="fund-pill-up" id="upload-badge">Cedar</div>
+    <h2>Monitor FIDC</h2>
+    <p id="upload-desc">Cedar Octante Fundo de Investimento em Direitos Creditórios<br><br>Importe o arquivo <strong>Carteira</strong> exportado do portal Vortx.</p>
+    <div class="drop-zone" id="drop-zone">
+      <p><strong>Arraste o arquivo aqui</strong> ou clique para selecionar</p>
+      <p style="margin-top:4px;font-size:11px;color:var(--tl)">Formato .xlsx · Abas: InfoGerais, Receber, CotasAplicadas</p>
+    </div>
+    <button class="btn-primary" onclick="document.getElementById('file-input').click()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Selecionar Arquivo
+    </button>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+    <div id="err-msg"></div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="dashboard">
+  <!-- Sub-nav tabs -->
+  <div class="tab-nav">
+    <button class="tnav active" onclick="showTab('tab-overview')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Visão Geral
+    </button>
+    <button class="tnav" onclick="showTab('tab-stress')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Stress Test
+    </button>
+    <button class="tnav" onclick="showTab('tab-charts')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Gráficos &amp; Histórico
+    </button>
+    <button class="tnav" onclick="showTab('tab-estoque')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Estoque DC
+    </button>
+  </div>
+
+  <!-- ── TAB OVERVIEW ── -->
+  <div class="tab-panel active dash-section" id="tab-overview">
+    <div class="topbar">
+      <div>
+        <div class="fund-heading" id="dash-title">FIDC <em>Cedar</em></div>
+        <div class="fund-sub" id="dash-sub">Cedar Octante Fundo de Investimento em Direitos Creditórios</div>
+      </div>
+      <div class="topbar-r">
+        <button class="btn-outline" onclick="clearFund()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Limpar Dados
+        </button>
+      </div>
+    </div>
+
+    <div class="g4" id="kpi-grid"></div>
+
+    <div class="g2">
+      <div class="pct-card">
+        <div class="pct-lbl">% Direitos Creditórios / Patrimônio Líquido</div>
+        <div class="pct-num" id="kpi-pct">0,00%</div>
+        <div class="pct-bar-bg"><div class="pct-bar" id="pct-bar"></div></div>
+        <div class="pct-note">(DC − PDD) ÷ PL Total do Fundo</div>
+      </div>
+      <div class="dcliq">
+        <div>
+          <div class="dcliq-lbl">DC Líquido de Provisão</div>
+          <div class="dcliq-val" id="kpi-dc-liq" style="margin-top:8px">—</div>
+        </div>
+        <div>
+          <div class="dcliq-row"><span class="dcliq-rl">DC C AQUIS</span><span class="dcliq-rv" id="mini-dc-aquis">—</span></div>
+          <div class="dcliq-row"><span class="dcliq-rl">DC S AQUIS</span><span class="dcliq-rv" id="mini-dc-saquis">—</span></div>
+          <div class="dcliq-row"><span class="dcliq-rl">PDD C RISCO</span><span class="dcliq-rv" id="mini-pdd" style="color:var(--r)">—</span></div>
+          <div class="dcliq-row" style="background:var(--rb);border-radius:6px;margin-top:4px;border-bottom:none;padding:6px 8px"><span class="dcliq-rl" style="font-weight:700;color:var(--r)">% PDD / DC Bruto</span><span class="dcliq-rv" id="mini-pdd-pct" style="color:var(--r);font-weight:700;font-size:13px">—</span></div>
+          <div class="dcliq-row" style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px;border-bottom:none"><span class="dcliq-rl" style="font-weight:700;color:var(--bd)">VALID</span><span class="dcliq-rv" id="mini-valid" style="color:var(--bd);font-weight:700">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">Razões de Garantia — Subordinação</div>
+    <div class="g4r" id="razoes-grid"></div>
+
+    <div class="sec">Patrimônio Líquido por Subclasse</div>
+    <div class="tbl-wrap">
+      <div class="tbl-head">
+        <span class="tbl-ht">Cotas e Rentabilidade</span>
+        <span class="tbl-hs" id="tbl-date">—</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Subclasse</th><th>Patrimônio Líquido</th>
+            <th>Qtd. Cotas</th><th>Valor da Cota</th><th>Variação Diária</th>
+          </tr></thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB STRESS ── -->
+  <div class="tab-panel dash-section" id="tab-stress">
+    <div class="sec" style="margin-top:0">Simulação — Quanto posso integralizar até desenquadrar</div>
+    <div class="stress-box" id="stress-integr">
+      <div class="stress-hd integr">
+        <span class="stress-ht">Capacidade de Integralização por Índice</span>
+        <span class="stress-badge integr">Integralização</span>
+        <span class="stress-note">Quanto o PL Total pode crescer (novas integralizações) antes do desenquadramento</span>
+      </div>
+      <div class="stress-grid" id="stress-integr-grid"></div>
+    </div>
+
+    <div class="sec">Simulação — Quanto posso perder de PL até desenquadrar</div>
+    <div class="stress-box" id="stress-perda">
+      <div class="stress-hd perda">
+        <span class="stress-ht">Capacidade de Absorção de Perdas por Índice</span>
+        <span class="stress-badge perda">Perda de PL</span>
+        <span class="stress-note">Quanto o numerador (cotas subordinadas) pode cair antes do desenquadramento</span>
+      </div>
+      <div class="stress-grid" id="stress-perda-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB CHARTS ── -->
+  <div class="tab-panel dash-section" id="tab-charts">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <div class="sec" style="margin:0" id="charts-sec-title">Evolução Histórica — acumulado por importações</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="charts-hist-count" style="font-size:10px;color:var(--ts)"></span>
+        <button onclick="debugHistory()" style="padding:4px 10px;font-size:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:4px;cursor:pointer;font-family:var(--font);color:var(--ts)">🔍 Ver dados</button>
+        <button onclick="clearHistory()" style="padding:4px 10px;font-size:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:4px;cursor:pointer;font-family:var(--font);color:var(--r)">🗑 Limpar hist.</button>
+      </div>
+    </div>
+
+    <!-- Row 1: PL + DC -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Patrimônio Líquido Total</div>
+        <div class="chart-sub">Evolução ao longo das importações</div>
+        <div style="position:relative;height:220px"><canvas id="chart-pl"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Direitos Creditórios</div>
+        <div class="chart-sub">Evolução ao longo das importações</div>
+        <div style="position:relative;height:220px"><canvas id="chart-dc"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Caixa + PDD -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Caixa Disponível</div>
+        <div class="chart-sub">Evolução ao longo das importações</div>
+        <div style="position:relative;height:220px"><canvas id="chart-caixa"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">PDD — Provisão para Devedores</div>
+        <div class="chart-sub">Evolução ao longo das importações</div>
+        <div style="position:relative;height:220px"><canvas id="chart-pdd"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 3: VALID + % DC/PL com mínimo -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">VALID — Evolução Histórica</div>
+        <div class="chart-sub">Valor VALID registrado por carteira importada</div>
+        <div style="position:relative;height:220px"><canvas id="chart-valid"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">% DC / PL — vs. Mínimo Regulatório</div>
+        <div class="chart-sub">Índice de cobertura de DC sobre PL e referência mínima</div>
+        <div style="position:relative;height:220px"><canvas id="chart-pct-dc"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Razões de Garantia (full width) -->
+    <div class="chart-card">
+      <div class="chart-title">Razões de Garantia — Evolução vs. Mínimos Regulatórios</div>
+      <div class="chart-sub">Linhas sólidas = razão atual · Linhas tracejadas = mínimo regulatório de cada índice</div>
+      <div style="position:relative;height:280px"><canvas id="chart-razoes"></canvas></div>
+    </div>
+
+    <!-- Row 5: Rentabilidade (full width) -->
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:2px">
+        <div>
+          <div class="chart-title">Rentabilidade — FIDC vs. CDI</div>
+          <div class="chart-sub">Variação diária da cota Sênior vs. CDI diário · Ambos em % a.d.</div>
+        </div>
+        <button onclick="fetchCDI()" style="padding:5px 12px;background:var(--bd);color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">↻ Atualizar CDI</button>
+      </div>
+      <div style="position:relative;height:260px"><canvas id="chart-rent"></canvas></div>
+      <div id="cdi-status" style="font-size:10px;color:var(--ts);margin-top:6px;text-align:right"></div>
+    </div>
+
+    <!-- Row 6: Pies -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="chart-card">
+        <div class="chart-title">Composição do PL por Classe</div>
+        <div class="chart-sub">Distribuição entre Sênior · Mezanino · Subordinada</div>
+        <div style="position:relative;height:260px"><canvas id="chart-pl-pie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Alocação do Portfólio</div>
+        <div class="chart-sub">DC Líquido · Caixa · PDD em relação ao PL</div>
+        <div style="position:relative;height:260px"><canvas id="chart-alloc-pie"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- ══ TAB ESTOQUE ══ -->
+  <div class="tab-panel dash-section" id="tab-estoque">
+    <div class="topbar" style="margin-bottom:16px">
+      <div>
+        <div class="fund-heading">Estoque de <em>Direitos Creditórios</em></div>
+        <div class="fund-sub">Importe o arquivo de estoque exportado do portal para análise detalhada</div>
+      </div>
+      <div class="topbar-r">
+        <button class="btn-outline" onclick="document.getElementById('estoque-input').click()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar Estoque
+        </button>
+        <input type="file" id="estoque-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="parseEstoque(this.files[0])">
+      </div>
+    </div>
+
+    <!-- KPIs estoque -->
+    <div id="estoque-kpis" style="display:none">
+      <div class="g4" id="estoque-kpi-grid"></div>
+      <div class="sec">Distribuição do Estoque</div>
+      <div class="tbl-wrap">
+        <div class="tbl-head">
+          <span class="tbl-ht">Recebíveis por Vencimento / Sacado</span>
+          <span class="tbl-hs" id="estoque-date">—</span>
+        </div>
+        <div style="overflow-x:auto"><table><thead><tr id="estoque-thead"></tr></thead><tbody id="estoque-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="estoque-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;gap:16px">
+      <div style="width:64px;height:64px;background:var(--bl);border:1px solid var(--bb);border-radius:16px;display:flex;align-items:center;justify-content:center">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ba)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:6px">Estoque de Direitos Creditórios</div>
+        <div style="font-size:12px;color:var(--ts);max-width:400px;line-height:1.7">Importe o arquivo de estoque (.xlsx ou .csv) exportado do portal da Administradora para visualizar a composição detalhada da carteira de recebíveis, aging, concentração por sacado e cedente.</div>
+      </div>
+      <button class="btn-primary" onclick="document.getElementById('estoque-input').click()" style="margin-top:4px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importar Arquivo de Estoque
+      </button>
+      <div style="font-size:10px;color:var(--tl)">Formatos aceitos: .xlsx · .xls · .csv</div>
+    </div>
+  </div>
+
+<!-- ══ EMAIL MODAL ══ -->
+<style>
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(11,31,58,.6);z-index:500;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--w);border-radius:var(--radl);width:100%;max-width:560px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(11,31,58,.35)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;background:var(--bd)}
+.modal-hdr h3{font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.modal-close{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.modal-close:hover{background:rgba(255,255,255,.2)}
+.modal-body{padding:22px 24px;overflow-y:auto}
+.modal-ftr{padding:14px 22px;border-top:1px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;background:var(--bg)}
+.email-field{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.email-field:last-of-type{border-bottom:none}
+.email-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ts);width:52px;flex-shrink:0}
+.email-val{font-size:12px;color:var(--t);flex:1}
+.email-steps{margin-top:18px;background:var(--bl);border:1px solid var(--bb);border-radius:8px;padding:16px 18px}
+.email-steps h4{font-size:11px;font-weight:700;color:var(--bd);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.email-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+.email-step:last-child{margin-bottom:0}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--bd);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-txt{font-size:12px;color:var(--tm);line-height:1.5}
+.step-txt strong{color:var(--bd)}
+.email-body-preview{margin-top:16px;background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:14px;font-size:12px;color:var(--tm);line-height:1.7;white-space:pre-wrap}
+</style>
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Enviar E-mail — <span id="modal-fund-name">FIDC Cedar</span>
+      </h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Campos do e-mail -->
+      <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:4px 16px;margin-bottom:4px">
+        <div class="email-field">
+          <span class="email-lbl">Para</span>
+          <span class="email-val" id="email-to-display">—</span>
+        </div>
+        <div class="email-field">
+          <span class="email-lbl">CC</span>
+          <span class="email-val" id="email-cc-display">—</span>
+        </div>
+        <div class="email-field">
+          <span class="email-lbl">Assunto</span>
+          <span class="email-val" id="email-subject-display" style="font-weight:600;color:var(--bd)">—</span>
+        </div>
+      </div>
+
+      <!-- Corpo do e-mail (editável) -->
+      <div style="margin-top:14px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ts);margin-bottom:6px">Corpo do E-mail</div>
+        <div id="email-body-text" contenteditable="true" style="width:100%;padding:10px 12px;border:1px solid var(--bdr2);border-radius:6px;font-family:'Aptos','Aptos (Body)',Calibri,Arial,sans-serif;font-size:12px;color:var(--t);background:var(--w);min-height:180px;max-height:340px;overflow-y:auto;outline:none;line-height:1.75;white-space:pre-wrap;box-sizing:border-box"></div>
+      </div>
+
+      <!-- Capture image -->
+      <div style="margin-top:14px;background:var(--bl);border:1px solid var(--bb);border-radius:8px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:700;color:var(--bd);margin-bottom:4px">📸 Inserir Imagem do Relatório no E-mail</div>
+        <div style="font-size:11px;color:var(--ts);margin-bottom:10px;line-height:1.5">Gera uma imagem do relatório e copia para a área de transferência. Cole no corpo do e-mail com <strong>Ctrl+V</strong> — layout 100% preservado.</div>
+        <button id="btn-capture" onclick="captureReportImage()" style="width:100%;padding:9px;background:var(--bd);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">📸 Gerar Imagem do Relatório</button>
+        <div id="capture-status" style="font-size:11px;margin-top:8px;color:var(--ts);min-height:16px;line-height:1.5"></div>
+      </div>
+
+      <!-- Passos -->
+      <div class="email-steps">
+        <h4>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Como enviar com imagem
+        </h4>
+        <div class="email-step">
+          <div class="step-num">1</div>
+          <div class="step-txt">Clique em <strong>"Gerar Imagem"</strong> — o relatório é capturado automaticamente</div>
+        </div>
+        <div class="email-step">
+          <div class="step-num">2</div>
+          <div class="step-txt">Clique em <strong>"Abrir no Outlook"</strong> — destinatários e assunto já preenchidos</div>
+        </div>
+        <div class="email-step">
+          <div class="step-num">3</div>
+          <div class="step-txt">No corpo do e-mail: cole com <strong>Ctrl+V</strong> — a imagem do relatório aparece</div>
+        </div>
+        <div class="email-step">
+          <div class="step-num">4</div>
+          <div class="step-txt">Opcionalmente anexe o PDF → clique em <strong>Enviar</strong> ✓</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-ftr" style="flex-wrap:wrap;gap:6px">
+      <button class="btn-outline" onclick="closeModal()">Fechar</button>
+      <button class="btn-outline" onclick="openPrintPage()" style="color:var(--bd);border-color:var(--ba)" title="Salvar o relatório como PDF para anexar ao e-mail">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Salvar PDF
+      </button>
+      <button class="btn-action" onclick="sendViaMailto()" title="Abre o Outlook com destinatários, assunto e corpo preenchidos">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Abrir no Outlook
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer>Octante Gestora &nbsp;·&nbsp; Monitor FIDC &nbsp;·&nbsp; Uso Interno &nbsp;·&nbsp; Gerado em <span id="footer-date"></span></footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIGURAÇÃO DOS FUNDOS
+// ══════════════════════════════════════════════════════════════
+const FUNDS = [
+  {
+    key:'cedar', short:'Cedar', emailSubject:'FIDC Cedar Octante - Informações Diárias',
+    full:'Cedar Octante Fundo de Investimento em Direitos Creditórios',
+    fundo:'Cedar Octante Fundo de Investimento em Direitos Creditórios',
+    cnpj:'46.268.360/0001-70',
+    emailTo:'front@octante.com.br;gpires@octante.com.br',
+    emailCc:'bruddenfidc@octante.com.br',
+    allClasses:['CEDAR MZ','CEDAR MZ II','CEDAR MZ II S2','CEDAR MZ II S3','CEDAR MZ III',
+                'CEDAR MZ S2','CEDAR MZ S3','CEDAR SR','CEDAR SR III','CEDAR SR IV','CEDAR SR V','FIDC CEDAR SB'],
+    subclasses: ['CEDAR MZ','CEDAR MZ II','CEDAR MZ II S2','CEDAR MZ II S3','CEDAR MZ III',
+                 'CEDAR MZ S2','CEDAR MZ S3','CEDAR SR','CEDAR SR III','CEDAR SR IV','CEDAR SR V','FIDC CEDAR SB'],
+    razoes:[
+      {label:'Sênior',       min:42.20, num:['CEDAR MZ','CEDAR MZ II','CEDAR MZ II S2','CEDAR MZ II S3','CEDAR MZ III','CEDAR MZ S2','CEDAR MZ S3','FIDC CEDAR SB']},
+      {label:'Mezanino I',   min:31,    num:['CEDAR MZ II','CEDAR MZ II S2','CEDAR MZ II S3','CEDAR MZ III','FIDC CEDAR SB']},
+      {label:'Mezanino II',  min:25,    num:['CEDAR MZ III','FIDC CEDAR SB']},
+      {label:'Mezanino III', min:20,    num:['FIDC CEDAR SB']},
+    ]
+  },
+  {
+    key:'percapital', short:'Percapital', emailSubject:'FIDC PerCapital Octante - Informações Diárias',
+    full:'Percapital Octante RN Consig Fundo de Investimento em Direitos Creditórios',
+    emailTo:'front@octante.com.br;Julia.Andrade@octante.com.br;gpires@octante.com.br;william@percapital.com.br;jcalves@percapital.com.br;weliton@percapital.com.br',
+    emailCc:'percapitalfidc@octante.com.br',
+    allClasses:[], subclasses:[],
+    razoes:[
+      {label:'Garantia Sênior', min:35, num:[]},
+      {label:'Garantia Mezanino', min:15, num:[]},
+    ]
+  },
+  {
+    key:'domus', short:'Domus', emailSubject:'FIDC Domus Octante - Informações Diárias',
+    full:'Domus Octante I Fundo de Investimento em Direitos Creditórios de Responsabilidade Limitada',
+    emailTo:'Julia.Andrade@octante.com.br;domusfidc@octante.com.br;gpires@octante.com.br;rodrigo.svirsky@dolcap.com;ronaldo.leao@dolcap.com;guilherme.amaral@dolcap.com',
+    emailCc:'domusfidc@octante.com.br',
+    allClasses:[], subclasses:[],
+    razoes:[
+      {label:'Garantia Sênior', min:35, num:[]},
+      {label:'Garantia Mezanino', min:15, num:[]},
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let active = 0;
+let cache   = [null, null, null];
+let history = [{},{},{}]; // per fund, key=dateStr, value=snapshot
+let cdiCache = [[], [], []]; // CDI data per fund: [{date, daily, ytd}]apshot
+let charts = {}; // chart instances
+
+const DASH_URL = window.location.href;
+
+function loadState() {
+  FUNDS.forEach((f,i) => {
+    try { const r=localStorage.getItem('oct5_'+f.key); if(r) cache[i]=JSON.parse(r); } catch(e){}
+    try { const r=localStorage.getItem('oct5h_'+f.key); if(r) history[i]=JSON.parse(r); } catch(e){}
+  });
+}
+function normDate(ref) {
+  // Always return 'DD/MM/YYYY' string regardless of input type
+  if (!ref) return null;
+  if (typeof ref === 'string' && /\d{2}\/\d{2}\/\d{4}/.test(ref)) return ref;
+  if (ref instanceof Date) {
+    const d = String(ref.getDate()).padStart(2,'0');
+    const m = String(ref.getMonth()+1).padStart(2,'0');
+    return d+'/'+m+'/'+ref.getFullYear();
+  }
+  // Try parsing "Wed Apr 23 2026..." format
+  try {
+    const dt = new Date(ref);
+    if (!isNaN(dt)) {
+      const d = String(dt.getDate()).padStart(2,'0');
+      const m = String(dt.getMonth()+1).padStart(2,'0');
+      return d+'/'+m+'/'+dt.getFullYear();
+    }
+  } catch(e){}
+  return String(ref);
+}
+
+function saveState(i, d) {
+  const dateKey = normDate(d.dataRef);
+
+  // ── 1. Save compact cache (NO igMap to avoid localStorage quota) ──
+  try {
+    // Compact igMap: only pl + var per subclass
+    const igCompact = {};
+    Object.keys(d.igMap||{}).forEach(k => {
+      igCompact[k] = {pl: d.igMap[k].pl, cota: d.igMap[k].cota, var: d.igMap[k].var, qtd: d.igMap[k].qtd};
+    });
+    const lean = {
+      dataRef: dateKey||d.dataRef,
+      plTotal: d.plTotal, dcTotal: d.dcTotal,
+      dcAquis: d.dcAquis, dcSAquis: d.dcSAquis,
+      pdd: d.pdd, caixa: d.caixa, pctDC: d.pctDC, dcLiq: d.dcLiq,
+      valid: d.valid||0,
+      razoes: d.razoes.map(r=>({label:r.label, pct:r.pct, min:r.min, num:r.num})),
+      subs:   d.subs,
+      igMap:  igCompact
+    };
+    localStorage.setItem('oct5_'+FUNDS[i].key, JSON.stringify(lean));
+  } catch(e) { console.warn('saveState cache error:', e.message); }
+
+  // ── 2. Save history snapshot ──
+  if (!dateKey) { console.warn('saveState: no dateKey, skipping history'); return; }
+
+  // Get varSR from the senior class
+  let varSR = null;
+  try {
+    const srClass = (d.subs||[]).find(s => {
+      const u = s.toUpperCase();
+      return u === 'CEDAR SR V' || u === 'CEDAR SR' || u === 'CEDAR SR III' || u === 'CEDAR SR IV';
+    }) || (d.subs||[]).find(s => s.toUpperCase().includes('SR'));
+    if (srClass && d.igMap && d.igMap[srClass.toUpperCase()]) {
+      varSR = d.igMap[srClass.toUpperCase()].var;
+    }
+  } catch(e) {}
+
+  // Build compact subclass data for chart
+  const subsSnap = {};
+  (d.subs||[]).forEach(s => {
+    const info = d.igMap && d.igMap[s.toUpperCase()];
+    if (info) subsSnap[s] = {pl: info.pl, var: info.var};
+  });
+
+  history[i][dateKey] = {
+    pl:     d.plTotal,
+    dc:     d.dcTotal,
+    pdd:    d.pdd,
+    caixa:  d.caixa,
+    valid:  d.valid||0,
+    pctDC:  d.pctDC,
+    varSR:  varSR,
+    subs:   subsSnap,
+    razoes: d.razoes.map(r=>({label:r.label, pct:r.pct, min:r.min}))
+  };
+
+  try {
+    const histJson = JSON.stringify(history[i]);
+    localStorage.setItem('oct5h_'+FUNDS[i].key, histJson);
+    console.log(
+      '%c✓ Histórico salvo', 'color:green;font-weight:bold',
+      '| Fundo:', FUNDS[i].short,
+      '| Data:', dateKey,
+      '| Total pontos:', Object.keys(history[i]).length,
+      '| Tamanho:', (histJson.length/1024).toFixed(1)+'KB'
+    );
+  } catch(e) {
+    console.error('saveState history FAILED:', e.message);
+    // Prune oldest 20% and retry
+    const keys = Object.keys(history[i]).sort();
+    const pruneN = Math.ceil(keys.length * 0.2);
+    keys.slice(0, pruneN).forEach(k => delete history[i][k]);
+    try { localStorage.setItem('oct5h_'+FUNDS[i].key, JSON.stringify(history[i])); } catch(e2) {
+      console.error('saveState retry also failed:', e2.message);
+    }
+  }
+}
+function clearFund() {
+  if(!confirm('Limpar dados do fundo '+FUNDS[active].short+'?')) return;
+  cache[active]=null;
+  try { localStorage.removeItem('oct5_'+FUNDS[active].key); } catch(e){}
+  dotRefresh();
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('upload-screen').style.display='flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+const fmt    = (v,d=2) => (v==null||isNaN(v))?'—':v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtBRL = v => (v==null||isNaN(v))?'—':'R$\u00a0'+fmt(v,2);
+const fmtPct = (v,d=2) => (v==null||isNaN(v))?'—':fmt(v,d)+'%';
+
+function sema(val, min, margin=3) {
+  return val>=min+margin?'green':val>=min-margin?'amber':'red';
+}
+function animate(el, end, dur=800, suffix='', dec=2, brl=false) {
+  if(isNaN(end)){el.textContent='—';return}
+  const t0=performance.now();
+  (function step(now){
+    const p=Math.min((now-t0)/dur,1),e=1-Math.pow(1-p,3),cur=end*e;
+    el.textContent=brl?fmtBRL(cur):fmt(cur,dec)+suffix;
+    p<1?requestAnimationFrame(step):(el.textContent=brl?fmtBRL(end):fmt(end,dec)+suffix);
+  })(t0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tnav').forEach(b=>b.classList.remove('active'));
+  const panel=document.getElementById(id);
+  if(panel) panel.classList.add('active');
+  const idx=['tab-overview','tab-stress','tab-charts','tab-estoque'].indexOf(id);
+  if(idx>=0) document.querySelectorAll('.tnav')[idx].classList.add('active');
+  // Render charts if we have any history data (even without current cache)
+  if(id==='tab-charts') {
+    const histKeys = history[active] ? Object.keys(history[active]) : [];
+    const countEl  = document.getElementById('charts-hist-count');
+    if (countEl) countEl.textContent = histKeys.length + ' ponto(s) histórico(s)';
+    if (histKeys.length > 0 || cache[active]) {
+      // Wait for DOM paint before Chart.js measures canvas dimensions
+      requestAnimationFrame(function() {
+        setTimeout(function() { renderCharts(active); }, 80);
+      });
+    } else {
+      const secEl = document.getElementById('charts-sec-title');
+      if (secEl) secEl.textContent = 'Nenhum histórico ainda — importe carteiras de datas diferentes';
+    }
+  }
+}
+
+// ── ESTOQUE PARSER ──
+function parseEstoque(file) {
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      if(!data.length){alert('Arquivo vazio.');return;}
+      
+      document.getElementById('estoque-empty').style.display='none';
+      document.getElementById('estoque-kpis').style.display='block';
+      document.getElementById('estoque-date').textContent='Arquivo: '+file.name;
+
+      // Header row
+      const thead=document.getElementById('estoque-thead');
+      thead.innerHTML='';
+      (data[0]||[]).forEach(h=>{
+        const th=document.createElement('th');
+        th.textContent=h||'';
+        thead.appendChild(th);
+      });
+
+      // Data rows (max 200)
+      const tbody=document.getElementById('estoque-tbody');
+      tbody.innerHTML='';
+      const maxRows=Math.min(data.length-1,200);
+      for(let i=1;i<=maxRows;i++){
+        const tr=document.createElement('tr');
+        (data[i]||[]).forEach(cell=>{
+          const td=document.createElement('td');
+          td.textContent=cell!=null?cell:'—';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
+      // KPI grid
+      const kg=document.getElementById('estoque-kpi-grid');
+      kg.innerHTML='';
+      const totalRows=data.length-1;
+      const cols=data[0]?data[0].length:0;
+      [
+        {l:'Total de Registros',v:totalRows.toLocaleString('pt-BR'),sub:'Linhas no arquivo'},
+        {l:'Colunas Disponíveis',v:cols.toString(),sub:'Campos por registro'},
+        {l:'Arquivo Importado',v:file.name.split('.')[0],sub:'Fonte: '+file.name},
+        {l:'Status',v:'Importado',sub:'Pronto para análise'},
+      ].forEach(k=>{
+        const el=document.createElement('div');
+        el.className='card';
+        el.innerHTML='<div class="kpi-lbl">'+k.l+'</div><div class="kpi-val" style="font-size:16px">'+k.v+'</div><div class="kpi-sub">'+k.sub+'</div>';
+        kg.appendChild(el);
+      });
+    } catch(ex){alert('Erro ao processar: '+ex.message);}
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ══════════════════════════════════════════════════════════════
+// FUND SWITCHING
+// ══════════════════════════════════════════════════════════════
+function dotRefresh() {
+  document.querySelectorAll('.ftab').forEach((b,i)=>b.classList.toggle('has-data',cache[i]!==null));
+}
+function switchFund(idx) {
+  active=idx;
+  document.querySelectorAll('.ftab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const f=FUNDS[idx];
+  document.getElementById('upload-badge').textContent=f.short;
+  document.getElementById('upload-desc').innerHTML=f.full+'<br><br>Importe o arquivo <strong>Carteira</strong> exportado do portal Vortx.';
+  // Destroy old charts
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});
+  charts={};
+  showTab('tab-overview');
+  if(cache[idx]) render(cache[idx],idx);
+  else {document.getElementById('dashboard').style.display='none';document.getElementById('upload-screen').style.display='flex';}
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILE INPUT
+// ══════════════════════════════════════════════════════════════
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('click',()=>document.getElementById('file-input').click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])parse(e.dataTransfer.files[0])});
+document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])parse(e.target.files[0]);e.target.value='';});
+function showErr(m){const el=document.getElementById('err-msg');el.textContent='⚠ '+m;el.style.display='block';}
+
+// ══════════════════════════════════════════════════════════════
+// EXCEL PARSING
+// InfoGerais: (0)carteira|(1)cnpj|(2)nome|(3)dataAtual|(4)admin|(5)pl|(6)qtdCotas|(7)valorCota|(8)variacaoCota
+// Receber:    (0)carteira|(1)nome|(2)valReceb|(3)detalhes|(4)valor
+// CotasAplicadas: ...(8)valorBruto...
+// ══════════════════════════════════════════════════════════════
+function parse(file) {
+  document.getElementById('err-msg').style.display='none';
+  const r=new FileReader();
+  r.onload=e=>{
+    try {
+      const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      const wsI=wb.Sheets['InfoGerais'],wsR=wb.Sheets['Receber'],wsC=wb.Sheets['CotasAplicadas'],wsPag=wb.Sheets['Pagar'];
+      if(!wsI){showErr('"InfoGerais" não encontrada.');return}
+      if(!wsR){showErr('"Receber" não encontrada.');return}
+      if(!wsC){showErr('"CotasAplicadas" não encontrada.');return}
+
+      const ig=XLSX.utils.sheet_to_json(wsI,{header:1,defval:null});
+      const rec=XLSX.utils.sheet_to_json(wsR,{header:1,defval:null});
+      const cot=XLSX.utils.sheet_to_json(wsC,{header:1,defval:null});
+
+      // Date
+      let dataRef=null;
+      for(let i=1;i<ig.length;i++){if(ig[i][3]){dataRef=ig[i][3];break}}
+
+      // igMap
+      const igMap={};
+      for(let i=1;i<ig.length;i++){
+        const nm=ig[i][2]?String(ig[i][2]).trim().toUpperCase():null;
+        if(!nm) continue;
+        igMap[nm]={pl:+ig[i][5]||0,qtd:+ig[i][6]||0,cota:+ig[i][7]||0,var:+ig[i][8]||0};
+      }
+
+      const f=FUNDS[active];
+      const allCls=f.allClasses.length?f.allClasses:Object.keys(igMap);
+      let plTotal=allCls.reduce((s,c)=>s+(igMap[c.toUpperCase()]?.pl||0),0);
+      if(!plTotal) plTotal=Object.values(igMap).reduce((s,v)=>s+v.pl,0);
+
+      // DC: soma DC C AQUIS + DC S AQUIS (e qualquer outra nomenclatura DC*)
+      let dcAquis=0, dcSAquis=0, dcTotal=0;
+      for(let i=1;i<rec.length;i++){
+        const nm=rec[i][2]?String(rec[i][2]).trim().toUpperCase():'';
+        const v=parseFloat(rec[i][4])||0;
+        if(nm.includes('DC C AQUIS')){dcAquis+=v;dcTotal+=v;}
+        else if(nm.includes('DC S AQUIS')){dcSAquis+=v;dcTotal+=v;}
+      }
+
+      // PDD
+      let pdd=0;
+      for(let i=1;i<rec.length;i++){
+        const nm=rec[i][2]?String(rec[i][2]).trim().toUpperCase():'';
+        if(nm.includes('PDD C RISCO')) pdd+=Math.abs(parseFloat(rec[i][4])||0);
+      }
+
+      // Caixa
+      let caixa=0;
+      for(let i=1;i<cot.length;i++){const v=parseFloat(cot[i][8]);if(!isNaN(v))caixa+=v;}
+
+      const pctDC=plTotal>0?(dcTotal-pdd)/plTotal*100:0;
+      const dcLiq=dcTotal-pdd;
+
+      // Razões
+      const razoes=f.razoes.map(rz=>{
+        const num=rz.num.reduce((s,c)=>s+(igMap[c.toUpperCase()]?.pl||0),0);
+        return{...rz,num,pct:plTotal>0?num/plTotal*100:0};
+      });
+
+      const subs=f.subclasses.length?f.subclasses:Object.keys(igMap).filter(k=>!k.includes('SB'));
+
+      // Parse VALID from Pagar sheet (col C = despesa, col E = valor)
+      let valid = 0;
+      if(wsPag) {
+        const pag = XLSX.utils.sheet_to_json(wsPag,{header:1,defval:null});
+        pag.forEach(row=>{
+          if(row && row[2] && String(row[2]).trim().toUpperCase()==='VALID') {
+            valid += Math.abs(parseFloat(row[4])||0);
+          }
+        });
+      }
+      // Normalize dataRef to consistent DD/MM/YYYY string
+      const dataRefNorm = normDate ? normDate(dataRef) : (
+        dataRef instanceof Date
+          ? String(dataRef.getDate()).padStart(2,'0')+'/'
+            +String(dataRef.getMonth()+1).padStart(2,'0')+'/'
+            +dataRef.getFullYear()
+          : String(dataRef)
+      );
+      const d={dataRef:dataRefNorm,plTotal,dcTotal,dcAquis,dcSAquis,pdd,caixa,pctDC,dcLiq,razoes,igMap,subs,valid};
+      cache[active]=d; saveState(active,d); dotRefresh(); render(d,active);
+      // Auto-refresh charts if tab is already open, or update count
+      const chartsPanel = document.getElementById('tab-charts');
+      const countEl2 = document.getElementById('charts-hist-count');
+      const histLen2 = history[active] ? Object.keys(history[active]).length : 0;
+      if (countEl2) countEl2.textContent = histLen2 + ' ponto(s) histórico(s)';
+      if (chartsPanel && chartsPanel.classList.contains('active') && histLen2 > 0) {
+        requestAnimationFrame(function() {
+          setTimeout(function() { renderCharts(active); }, 80);
+        });
+      }
+      // Show brief save confirmation in the charts section title
+      const secEl = document.querySelector('#tab-charts .sec');
+      if (secEl) {
+        const dateKey = d.dataRef || '—';
+        const pts = Object.keys(history[active]).length;
+        secEl.textContent = 'Evolução Histórica — ' + pts + ' ponto(s) registrado(s) | Último: ' + dateKey;
+      }
+
+    } catch(ex){console.error(ex);showErr('Erro ao processar: '+ex.message);}
+  };
+  r.readAsBinaryString(file);
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function render(d, idx) {
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  const f=FUNDS[idx];
+
+  // Titles
+  document.getElementById('dash-title').innerHTML=`FIDC <em>${f.short}</em>`;
+  document.getElementById('dash-sub').textContent=f.full;
+
+  // Date
+  let ds='—';
+  if(d.dataRef) ds=(d.dataRef instanceof Date)?d.dataRef.toLocaleDateString('pt-BR'):String(d.dataRef);
+  document.getElementById('ref-date').textContent=ds;
+  document.getElementById('tbl-date').textContent='Posição: '+ds;
+  document.getElementById('footer-date').textContent=new Date().toLocaleString
+  const phDate=document.getElementById('print-header-date');
+  if(phDate) phDate.textContent='Cedar Octante FIDC · Posição: '+ds+'  ·  Gerado em: '+new Date().toLocaleDateString('pt-BR');('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // ── KPI CARDS ──
+  const icons=[
+    {ico:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',bg:'#EFF6FF'},
+    {ico:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',bg:'#EFF6FF'},
+    {ico:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',bg:'#FEF2F2'},
+    {ico:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',bg:'#ECFDF5'},
+  ];
+  const kg=document.getElementById('kpi-grid');
+  kg.innerHTML='';
+  [
+    {l:'Patrimônio Líquido Total',v:d.plTotal,c:'var(--bd)',sub:'FIDC consolidado',neg:false},
+    {l:'Direitos Creditórios',    v:d.dcTotal,c:'var(--bd)',sub:'DC C AQUIS + DC S AQUIS',neg:false},
+    {l:'PDD — Provisão',          v:d.pdd,    c:'var(--r)', sub:'Provisão para Devedores Duvidosos',neg:true},
+    {l:'Caixa Disponível',        v:d.caixa,  c:'var(--g)', sub:'CotasAplicadas · valor bruto',neg:false},
+  ].forEach((k,i)=>{
+    const el=document.createElement('div');
+    el.className='card anim';
+    el.innerHTML=`<div class="kpi-ico" style="background:${icons[i].bg}">${icons[i].ico}</div>
+      <div class="kpi-lbl">${k.l}</div>
+      <div class="kpi-val" style="color:${k.c}" id="kv${i}">R$&nbsp;0,00</div>
+      <div class="kpi-sub">${k.sub}</div>`;
+    kg.appendChild(el);
+    setTimeout(()=>{
+      const vel=document.getElementById('kv'+i);
+      animate(vel,k.v,850,'',2,true);
+      if(k.neg) setTimeout(()=>{vel.textContent='('+fmtBRL(k.v)+')';},900);
+    },i*70+40);
+  });
+
+  // PCT
+  setTimeout(()=>animate(document.getElementById('kpi-pct'),d.pctDC,950,'%',2),80);
+  setTimeout(()=>{
+    const bar=document.getElementById('pct-bar');
+    bar.style.width=Math.min(100,Math.max(0,d.pctDC))+'%';
+    bar.style.background=d.pctDC>=70?'#10B981':d.pctDC>=50?'#F59E0B':'#EF4444';
+  },280);
+  setTimeout(()=>animate(document.getElementById('kpi-dc-liq'),d.dcLiq,850,'',2,true),120);
+  document.getElementById('mini-dc-aquis').textContent=fmtBRL(d.dcAquis);
+  document.getElementById('mini-dc-saquis').textContent=fmtBRL(d.dcSAquis);
+  document.getElementById('mini-pdd').textContent='('+fmtBRL(d.pdd)+')';
+  const pddPct = d.dcTotal>0 ? d.pdd/d.dcTotal*100 : 0;
+  const elPddPct = document.getElementById('mini-pdd-pct');
+  if(elPddPct) elPddPct.textContent = fmt(pddPct,2)+'%';
+  const elValid = document.getElementById('mini-valid');
+  if(elValid) elValid.textContent = d.valid!=null ? fmtBRL(d.valid) : '—';
+
+  // RAZÕES
+  const rg=document.getElementById('razoes-grid');
+  rg.innerHTML='';
+  if(!d.razoes.length){
+    rg.innerHTML='<div class="card" style="grid-column:1/-1;color:var(--ts);font-size:12px;text-align:center;padding:28px">Razões não configuradas para este fundo.</div>';
+  } else {
+    d.razoes.forEach((rz,i)=>{
+      const cls=sema(rz.pct,rz.min);
+      const bw=Math.min(100,(rz.pct/(rz.min*1.6))*100);
+      const lbl={green:'Enquadrado',amber:'Atenção',red:'Desenquadrado'};
+      const el=document.createElement('div');
+      el.className=`ind ${cls} anim`;
+      el.innerHTML=`<div class="ind-lbl">Razão — ${rz.label}</div>
+        <div class="ind-row">
+          <div class="ind-val ${cls}" id="rv${i}">0,00%</div>
+          <div class="ind-min"><div class="ind-min-lbl">Mínimo</div><div class="ind-min-val">${fmt(rz.min,2)}%</div></div>
+        </div>
+        <div class="ind-bar-bg"><div class="ind-bar ${cls}" id="rb${i}" style="width:0%"></div></div>
+        <div class="ind-badge ${cls}"><span class="ind-dot"></span>${lbl[cls]}</div>`;
+      rg.appendChild(el);
+      setTimeout(()=>{
+        animate(document.getElementById('rv'+i),rz.pct,850,'%',2);
+        document.getElementById('rb'+i).style.width=bw+'%';
+      },i*90+180);
+    });
+  }
+
+  // TABELA
+  const tbody=document.getElementById('tbl-body');
+  tbody.innerHTML='';
+  let totPL=0;
+  d.subs.forEach(c=>{
+    const info=d.igMap[c.toUpperCase()];
+    const pl=info?.pl??null,qtd=info?.qtd??null,cota=info?.cota??null,vr=info?.var??null;
+    if(pl!=null) totPL+=pl;
+    const cls=vr>0?'td-pos':vr<0?'td-neg':'';
+    tbody.innerHTML+=`<tr>
+      <td>${c}</td>
+      <td>${fmtBRL(pl)}</td>
+      <td>${qtd!=null?fmt(qtd,8):'—'}</td>
+      <td>${cota!=null?fmt(cota,8):'—'}</td>
+      <td class="${cls}">${vr!=null?fmt(vr,4)+'%':'—'}</td>
+    </tr>`;
+  });
+  tbody.innerHTML+=`<tr class="tr-tot"><td>Total Subclasses</td><td>${fmtBRL(totPL)}</td><td>—</td><td>—</td><td>—</td></tr>`;
+
+  // STRESS TEST
+  renderStress(d);
+}
+
+// ══════════════════════════════════════════════════════════════
+// STRESS TEST RENDER
+// ══════════════════════════════════════════════════════════════
+function renderStress(d) {
+  const ig = document.getElementById('stress-integr-grid');
+  const pg = document.getElementById('stress-perda-grid');
+  ig.innerHTML=''; pg.innerHTML='';
+
+  if(!d.razoes.length) {
+    ig.innerHTML=pg.innerHTML='<div style="padding:20px;font-size:11px;color:var(--ts)">Razões não configuradas.</div>';
+    return;
+  }
+
+  d.razoes.forEach(rz=>{
+    const minFrac=rz.min/100;
+
+    // ── INTEGRALIZAÇÃO: quanto o PL Total pode crescer antes de pct cair ao mínimo
+    // pct = num / plTotal → crescimento de PL (sênior) reduz pct
+    // num / (plTotal + X) = minFrac → X = num/minFrac - plTotal
+    const plMaxInt=rz.num>0?rz.num/minFrac:0;
+    const spaceInt=plMaxInt-d.plTotal;
+    const spaceIntPct=d.plTotal>0?spaceInt/d.plTotal*100:0;
+    const okInt=spaceInt>0;
+
+    // ── PERDA: quanto o numerador (cotas subordinadas) pode cair
+    // (num - X) / plTotal = minFrac → X = num - minFrac*plTotal
+    const maxPerdaNum=rz.num - minFrac*d.plTotal;
+    const okPerda=maxPerdaNum>0;
+
+    // Integralização card
+    const elI=document.createElement('div');
+    elI.className='sc';
+    elI.innerHTML=`<div class="sc-lbl">Razão — ${rz.label}</div>
+      <div class="sc-val" style="color:${okInt?'var(--g)':'var(--r)'}">${okInt?fmtBRL(spaceInt):'Já no limite'}</div>
+      <div class="sc-sub">${okInt?'Posso integralizar até este valor':'Sem margem para integralização'}</div>
+      <div class="sc-meta">
+        Atual: <span>${fmt(rz.pct,2)}%</span><br>
+        Mínimo: <span>${fmt(rz.min,2)}%</span><br>
+        PL Máximo: <span>${fmtBRL(plMaxInt)}</span><br>
+        Margem PL: <span style="color:${okInt?'var(--g)':'var(--r)'}">${fmt(spaceIntPct,2)}%</span>
+      </div>`;
+    ig.appendChild(elI);
+
+    // Perda card
+    const elP=document.createElement('div');
+    elP.className='sc';
+    elP.innerHTML=`<div class="sc-lbl">Razão — ${rz.label}</div>
+      <div class="sc-val" style="color:${okPerda?'var(--r)':'var(--r)'}">${okPerda?fmtBRL(maxPerdaNum):'Já desenquadrado'}</div>
+      <div class="sc-sub">${okPerda?'Perda máxima nas classes subordinadas até desenquadrar':'Índice abaixo do mínimo'}</div>
+      <div class="sc-meta">
+        Numerador atual: <span>${fmtBRL(rz.num)}</span><br>
+        Numerador mínimo: <span>${fmtBRL(minFrac*d.plTotal)}</span><br>
+        Folga: <span style="color:${okPerda?'var(--a)':'var(--r)'}">${fmtBRL(maxPerdaNum)}</span><br>
+        Atual: <span>${fmt(rz.pct,2)}%</span>
+      </div>`;
+    pg.appendChild(elP);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════════════
+const CHART_DEFAULTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'  '+fmtBRL(c.raw)}}},
+  scales:{
+    x:{grid:{display:false},ticks:{font:{size:10},color:'#6B7280'}},
+    y:{grid:{color:'#F3F4F6'},ticks:{font:{size:10},color:'#6B7280',callback:v=>fmtBRL(v)}}
+  }
+};
+const CHART_COLORS = {
+  pl:    {line:'#3B82F6',fill:'rgba(59,130,246,.08)'},
+  dc:    {line:'#1F4E79',fill:'rgba(31,78,121,.08)'},
+  caixa: {line:'#10B981',fill:'rgba(16,185,129,.08)'},
+  pdd:   {line:'#EF4444',fill:'rgba(239,68,68,.08)'},
+};
+
+function makeLineDataset(label, data, color) {
+  return {label,data,borderColor:color.line,backgroundColor:color.fill,fill:true,tension:.35,pointRadius:4,pointHoverRadius:6,borderWidth:2,pointBackgroundColor:color.line};
+}
+
+// ─────────────────────────────────────────────────────
+// CDI — Banco Central API
+// ─────────────────────────────────────────────────────
+async function fetchCDI() {
+  const statusEl = document.getElementById('cdi-status');
+  if (statusEl) statusEl.textContent = '⏳ Buscando CDI no Banco Central...';
+  try {
+    const today = new Date();
+    const start = '01/01/' + today.getFullYear();
+    const end   = today.toLocaleDateString('pt-BR');
+    const url   = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json'
+                + '&dataInicial=' + start + '&dataFinal=' + end;
+    const resp  = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data  = await resp.json();
+    let ytd = 1;
+    cdiCache[active] = data.map(item => {
+      const daily = parseFloat(item.valor) || 0;
+      ytd *= (1 + daily / 100);
+      return { date: item.data, daily, ytd: (ytd - 1) * 100 };
+    });
+    if (statusEl) statusEl.innerHTML =
+      '<span style="color:#2E7D32">✓ CDI atualizado — ' + cdiCache[active].length + ' dias úteis</span>';
+    if (Object.keys(history[active]).length) renderCharts(active);
+  } catch (err) {
+    if (statusEl) statusEl.innerHTML =
+      '<span style="color:#C62828">⚠ Erro ao buscar CDI: ' + err.message + '</span>';
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// RENDER CHARTS — called when tab is clicked or after import
+// ─────────────────────────────────────────────────────
+function renderCharts(idx) {
+  const hist = history[idx] || {};
+  const keys = Object.keys(hist);
+
+  // Update debug info
+  const dbg = document.getElementById('charts-debug');
+  if (dbg) dbg.textContent = 'Pontos no histórico: ' + keys.length;
+
+  if (!keys.length) return;
+
+  // Sort DD/MM/YYYY ascending
+  const dates = keys.slice().sort((a,b) => {
+    const pa = a.split('/'), pb = b.split('/');
+    return new Date(+pa[2],+pa[1]-1,+pa[0]) - new Date(+pb[2],+pb[1]-1,+pb[0]);
+  });
+
+  // Safe value extractor
+  const V = k => dates.map(d => {
+    const snap = hist[d];
+    if (!snap) return 0;
+    const v = snap[k];
+    return (v != null && !isNaN(v)) ? Number(v) : 0;
+  });
+
+  // Safe chart creator — destroys old, creates new, forces resize
+  function mkC(id, type, labels, datasets, opts) {
+    const el = document.getElementById(id);
+    if (!el) { console.warn('Canvas not found:', id); return; }
+    if (charts[id]) {
+      try { charts[id].destroy(); } catch(e) {}
+      delete charts[id];
+    }
+    try {
+      charts[id] = new Chart(el, {
+        type: type,
+        data: { labels: labels, datasets: datasets },
+        options: opts
+      });
+      // Force immediate + deferred resize for proper sizing
+      requestAnimationFrame(function() {
+        if (charts[id]) { try { charts[id].resize(); } catch(e){} }
+      });
+      setTimeout(function() {
+        if (charts[id]) { try { charts[id].resize(); } catch(e){} }
+      }, 200);
+    } catch(e) {
+      console.error('Chart creation failed for', id, ':', e.message, e);
+    }
+  }
+
+  // Shared options factory
+  function lineOpts(money) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, usePointStyle: true, padding: 12 } },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 }, maxTicksLimit: 8 } },
+        y: {
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 10 }, callback: function(v) { return money ? fmtBRL(v) : fmt(v,2)+'%'; } }
+        }
+      }
+    };
+  }
+
+  function ds(label, data, color, dashed) {
+    return {
+      label: label, data: data,
+      borderColor: color, backgroundColor: color + '22',
+      borderWidth: dashed ? 1.5 : 2.5,
+      borderDash: dashed ? [6,3] : [],
+      pointRadius: dates.length <= 20 ? 4 : 2,
+      pointHoverRadius: 7,
+      tension: 0.3,
+      fill: !dashed,
+      spanGaps: true
+    };
+  }
+
+  // ── LINE CHARTS ──────────────────────────────────────────
+  mkC('chart-pl',    'line', dates, [ds('PL Total',       V('pl'),    '#0E2A47')], lineOpts(true));
+  mkC('chart-dc',    'line', dates, [ds('DC Total',       V('dc'),    '#2F5D8C')], lineOpts(true));
+  mkC('chart-caixa', 'line', dates, [ds('Caixa',          V('caixa'), '#2E7D32')], lineOpts(true));
+  mkC('chart-pdd',   'line', dates, [ds('PDD',            V('pdd'),   '#C62828')], lineOpts(true));
+  mkC('chart-valid', 'line', dates, [ds('VALID',          V('valid'), '#7C3AED')], lineOpts(true));
+  mkC('chart-pct-dc','line', dates, [
+    ds('% DC / PL',   V('pctDC'),          '#0E2A47'),
+    ds('Ref. 80%',    dates.map(()=>80),   '#C62828', true)
+  ], lineOpts(false));
+
+  // ── RAZÕES ───────────────────────────────────────────────
+  const razLbls = [];
+  dates.forEach(function(d) { (hist[d].razoes||[]).forEach(function(r){ if(!razLbls.includes(r.label)) razLbls.push(r.label); }); });
+  const RC = ['#0E2A47','#2F5D8C','#3B82F6','#60A5FA'];
+  const MC = ['#C62828','#d97706','#7C3AED','#059669'];
+  const razDs = [];
+  razLbls.forEach(function(lbl,i) {
+    razDs.push(ds(lbl, dates.map(function(d){ const r=(hist[d].razoes||[]).find(function(x){return x.label===lbl;}); return r?r.pct:null; }), RC[i%4]));
+    const mins = dates.map(function(d){ const r=(hist[d].razoes||[]).find(function(x){return x.label===lbl;}); return r?r.min:null; });
+    if(mins.some(function(v){return v!==null;})) {
+      const d2 = ds('Mín. '+lbl, mins, MC[i%4], true);
+      d2.fill = false; d2.pointRadius = 0;
+      razDs.push(d2);
+    }
+  });
+  const razOpts = lineOpts(false);
+  razOpts.plugins.tooltip = { callbacks: { label: function(c){ return '  '+c.dataset.label+': '+fmt(c.raw,2)+'%'; } } };
+  mkC('chart-razoes', 'line', dates, razDs, razOpts);
+
+  // ── RENTABILIDADE ─────────────────────────────────────────
+  const cdiArr  = cdiCache[idx] || [];
+  const rentDs2 = [];
+  if (dates.some(function(d){ return hist[d].varSR != null; })) {
+    rentDs2.push(ds('Cota Sênior (var. diária %)', dates.map(function(d){ return hist[d].varSR!=null?hist[d].varSR:null; }), '#0E2A47'));
+  }
+  if (cdiArr.length) {
+    const cdiD = ds('CDI Diário (%)', dates.map(function(d){ const c=cdiArr.find(function(x){return x.date===d;}); return c?c.daily:null; }), '#F59E0B', true);
+    cdiD.fill = false;
+    rentDs2.push(cdiD);
+  }
+  if (rentDs2.length) {
+    const rOpts = lineOpts(false);
+    rOpts.plugins.tooltip = { callbacks: { label: function(c){ return '  '+c.dataset.label+': '+fmt(c.raw,4)+'%'; } } };
+    mkC('chart-rent', 'line', dates, rentDs2, rOpts);
+  }
+
+  // ── PIE CHARTS (only if current cache exists) ─────────────
+  const d0 = cache[idx];
+  if (d0 && d0.igMap) {
+    const srs = (d0.subs||[]).filter(function(s){return s.toUpperCase().includes('SR');}).reduce(function(a,s){return a+(d0.igMap[s.toUpperCase()]&&d0.igMap[s.toUpperCase()].pl||0);},0);
+    const mzs = (d0.subs||[]).filter(function(s){return s.toUpperCase().includes('MZ');}).reduce(function(a,s){return a+(d0.igMap[s.toUpperCase()]&&d0.igMap[s.toUpperCase()].pl||0);},0);
+    const sbs = (d0.igMap['FIDC CEDAR SB']&&d0.igMap['FIDC CEDAR SB'].pl)||0;
+    const tot = (srs+mzs+sbs)||1;
+
+    const pieOpts = function(total) {
+      return {
+        responsive: true, maintainAspectRatio: false, cutout: '55%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 11 }, padding: 14, usePointStyle: true,
+              generateLabels: function(chart) {
+                return chart.data.labels.map(function(lbl,i) {
+                  return { text: lbl+': '+fmtBRL(chart.data.datasets[0].data[i]), fillStyle: chart.data.datasets[0].backgroundColor[i], strokeStyle: '#fff', lineWidth: 2, pointStyle: 'circle', index: i };
+                });
+              }
+            }
+          },
+          tooltip: { callbacks: { label: function(c){ return ' '+c.label+': '+fmtBRL(c.raw)+' ('+fmt(c.raw/total*100,1)+'%)'; } } }
+        }
+      };
+    };
+
+    mkC('chart-pl-pie', 'doughnut',
+      ['Sênior','Mezanino','Subordinada (SB)'],
+      [{ data:[srs,mzs,sbs], backgroundColor:['#0E2A47','#2F5D8C','#3B82F6'], borderWidth:3, hoverOffset:8 }],
+      pieOpts(tot)
+    );
+
+    mkC('chart-alloc-pie', 'doughnut',
+      ['DC Líquido','Caixa','PDD'],
+      [{ data:[d0.dcLiq,d0.caixa,d0.pdd], backgroundColor:['#1F3A5F','#2E7D32','#C62828'], borderWidth:3, hoverOffset:8 }],
+      pieOpts(d0.plTotal||1)
+    );
+  }
+}
+
+
+
+
+// ─────────────────────────────────────────────────────
+// CDI — Banco Central API
+// ─────────────────────────────────────────────────────
+async function fetchCDI() {
+  const statusEl = document.getElementById('cdi-status');
+  if (statusEl) statusEl.textContent = '⏳ Buscando CDI no Banco Central...';
+  try {
+    const today = new Date();
+    const start = '01/01/' + today.getFullYear();
+    const end   = today.toLocaleDateString('pt-BR');
+    const url   = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?formato=json'
+                + '&dataInicial=' + start + '&dataFinal=' + end;
+    const resp  = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data  = await resp.json();
+    let ytd = 1;
+    cdiCache[active] = data.map(function(item) {
+      const daily = parseFloat(item.valor) || 0;
+      ytd *= (1 + daily / 100);
+      return { date: item.data, daily: daily, ytd: (ytd - 1) * 100 };
+    });
+    if (statusEl) statusEl.innerHTML =
+      '<span style="color:#2E7D32">✓ CDI atualizado — ' + cdiCache[active].length + ' dias úteis</span>';
+    if (Object.keys(history[active]).length) renderCharts(active);
+  } catch (err) {
+    if (statusEl) statusEl.innerHTML =
+      '<span style="color:#C62828">⚠ Erro ao buscar CDI: ' + err.message + '</span>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// EMAIL MODAL
+// ══════════════════════════════════════════════════════════════
+let _currentEmailHTML = '';
+let _currentEmailMeta = {to:'',cc:'',subject:'',dsFile:'',fShort:'',fundoFull:'',ds:''};
+
+function switchEmailTab(tab){
+  document.querySelectorAll('.etab').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.etab-panel').forEach(function(p){p.classList.remove('active');});
+  const i=['preview','instructions'].indexOf(tab);
+  if(i>=0) document.querySelectorAll('.etab')[i].classList.add('active');
+  const panel=document.getElementById('etab-'+tab);
+  if(panel) panel.classList.add('active');
+}
+function closeModal(){ document.getElementById('email-modal').classList.remove('open'); }
+function openEmailNewTab(){
+  if(!_currentEmailHTML) return;
+  const w=window.open('','_blank');
+  w.document.open(); w.document.write(_currentEmailHTML); w.document.close();
+  setTimeout(function(){try{w.focus();}catch(e){}},300);
+}
+function printEmail(){
+  if(!_currentEmailHTML) return;
+  const w=window.open('','_blank');
+  w.document.open(); w.document.write(_currentEmailHTML); w.document.close();
+  setTimeout(function(){try{w.focus();w.print();}catch(e){}},600);
+}
+function downloadEml(){
+  if(!_currentEmailHTML) return;
+  const m=_currentEmailMeta;
+  function toB64(str){try{const e=btoa(unescape(encodeURIComponent(str)));return e.match(/.{1,76}/g).join('\r\n');}catch(ex){return btoa(str);}}
+  const plain='Prezados,\r\n\r\nEncaminho as informacoes diarias de performance e enquadramento do '+m.fundoFull+', referentes a carteira de '+m.ds+'.\r\n\r\nAtenciosamente,\r\nVictor Alves Rodrigues\r\nAnalista Senior de FIDCs | Octante Gestora';
+  const bnd='oct_'+Date.now();
+  const eml='MIME-Version: 1.0\r\nDate: '+new Date().toUTCString()+'\r\nFrom: Victor Rodrigues <victor.rodrigues@octante.com.br>\r\nTo: '+m.to.replace(/;/g,', ')+'\r\nCc: '+m.cc+'\r\nSubject: =?UTF-8?B?'+btoa(unescape(encodeURIComponent(m.subject)))+'?=\r\nContent-Type: multipart/alternative; boundary="'+bnd+'"\r\n\r\n--'+bnd+'\r\nContent-Type: text/plain; charset="utf-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n'+toB64(plain)+'\r\n\r\n--'+bnd+'\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n'+toB64(_currentEmailHTML)+'\r\n\r\n--'+bnd+'--\r\n';
+  const fname='FIDC_'+m.fShort.replace(/\s+/g,'_')+'_'+m.dsFile+'.eml';
+  const blob=new Blob([eml],{type:'message/rfc822'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+  setTimeout(function(){alert('Arquivo "'+fname+'" baixado!\n\n1. Duplo clique no .eml\n2. Outlook abre com destinatários e assunto preenchidos\n3. Clique Enviar');},400);
+}
+
+function openEmailModal() {
+  const d=cache[active];
+  if(!d){alert('Importe um arquivo primeiro.');return;}
+  const f=FUNDS[active];
+  let ds='—',dsFile='XXXXXXXX';
+  if(d.dataRef){
+    ds=(d.dataRef instanceof Date)?d.dataRef.toLocaleDateString('pt-BR'):String(d.dataRef);
+    const pts=ds.split('/');if(pts.length===3)dsFile=pts[0]+pts[1]+pts[2];
+  }
+  _currentEmailMeta={to:f.emailTo,cc:f.emailCc,subject:(f.emailSubject||f.short+' - Informações Diárias')+' - '+ds,dsFile:dsFile,fShort:f.short,fundoFull:f.full,ds:ds};
+  document.getElementById('modal-fund-name').textContent='FIDC '+f.short;
+  document.getElementById('email-to-display').textContent=f.emailTo.replace(/;/g,' | ');
+  document.getElementById('email-cc-display').textContent=f.emailCc;
+  document.getElementById('email-subject-display').textContent=(f.emailSubject||f.short+' - Informações Diárias')+' - '+ds;
+  const pddPct=d.dcTotal>0?(d.pdd/d.dcTotal*100).toFixed(2).replace('.',','):'—';
+  const validStr=d.valid?fmtBRL(d.valid):'—';
+
+  // Build placeholder HTML while AI commentary loads
+  const FONT="'Aptos','Aptos (Body)',Calibri,Arial,sans-serif";
+  const placeHTML=
+    '<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">Prezados,</p>'
+   +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+   +'Encaminho as informações diárias de performance e enquadramento do '
+   +'<strong>'+f.full+'</strong>, referentes à carteira de <strong>'+ds+'</strong>.</p>'
+   +'<p style="font-family:'+FONT+';font-size:12px;color:#6b7280;font-style:italic;margin:0 0 14px">'
+   +'[Gerando análise automática...]</p>'
+   +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+   +'Segue em anexo o relatório diário em <strong>PDF</strong> e o <strong>Dashboard</strong> com os indicadores detalhados.</p>'
+   +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+   +'Permanecemos à disposição para quaisquer esclarecimentos.</p>'
+   +'<p style="font-family:'+FONT+';font-size:12px;margin:0">Atenciosamente,<br>'
+   +'<strong>Victor Alves Rodrigues</strong><br>'
+   +'Analista Sênior de FIDCs | Octante Gestora<br>'
+   +'victor.rodrigues@octante.com.br | +55 (11) 3060-5273</p>';
+
+  const bodyEl=document.getElementById('email-body-text');
+  bodyEl.innerHTML=placeHTML;
+  document.getElementById('email-modal').classList.add('open');
+  generateEmailCommentary(d,f,ds,pddPct);
+}
+
+async function generateEmailCommentary(d, f, ds, pddPct) {
+  const bodyEl = document.getElementById('email-body-text');
+  if (!bodyEl) return;
+
+  const FONT = "'Aptos','Aptos (Body)',Calibri,Arial,sans-serif";
+
+  const razoesSummary = (d.razoes||[]).map(function(r) {
+    var st = r.pct>=r.min+3?'Enquadrado':r.pct>=r.min?'Atenção':'DESENQUADRADO';
+    return r.label+': '+fmt(r.pct,2)+'% (mín: '+fmt(r.min,2)+'%) — '+st;
+  }).join('; ');
+
+  // Compare VALID with previous day
+  var histKeys = Object.keys(history[active]||{}).sort(function(a,b){
+    var pa=a.split('/'),pb=b.split('/');
+    return new Date(+pa[2],+pa[1]-1,+pa[0])-new Date(+pb[2],+pb[1]-1,+pb[0]);
+  });
+  var prevDate  = histKeys.length >= 2 ? histKeys[histKeys.length-2] : null;
+  var prevSnap  = prevDate ? (history[active]||{})[prevDate] : null;
+  var prevValid = prevSnap ? (prevSnap.valid||null) : null;
+  var validDelta = (prevValid!=null && d.valid!=null) ? d.valid - prevValid : null;
+
+  var validCtx = d.valid != null
+    ? 'VALID: '+fmtBRL(d.valid)+(validDelta!=null ? ' (variação vs '+prevDate+': '+fmtBRL(validDelta)+')' : ' (primeiro ponto)')
+    : 'VALID: não disponível';
+
+  var validInstruction = '';
+  if (d.valid != null) {
+    if (validDelta !== null && Math.abs(validDelta) > 100000) {
+      validInstruction = 'O VALID apresentou variação significativa de '+fmtBRL(validDelta)+' em relação ao dia anterior. Mencione: "Em relação ao ativo VALID ('+fmtBRL(d.valid)+'), estamos validando junto ao nosso Administrador."';
+    } else {
+      validInstruction = 'Mencione: "Em relação ao ativo VALID ('+fmtBRL(d.valid)+'), estamos validando junto ao nosso Administrador."';
+    }
+  }
+
+  // Helper: build the final rich HTML body from a plain commentary text
+  function buildBodyHTML(commentary) {
+    return '<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">Prezados,</p>'
+      +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+      +'Encaminho as informações diárias de performance e enquadramento do '
+      +'<strong>'+f.full+'</strong>, referentes à carteira de <strong>'+ds+'</strong>.</p>'
+      +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'+commentary+'</p>'
+      +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+      +'Segue em anexo o relatório diário em <strong>PDF</strong> e o <strong>Dashboard</strong> com os indicadores detalhados.</p>'
+      +'<p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">'
+      +'Permanecemos à disposição para quaisquer esclarecimentos.</p>'
+      +'<p style="font-family:'+FONT+';font-size:12px;margin:0">Atenciosamente,<br>'
+      +'<strong>Victor Alves Rodrigues</strong><br>'
+      +'Analista Sênior de FIDCs | Octante Gestora<br>'
+      +'victor.rodrigues@octante.com.br | +55 (11) 3060-5273</p>';
+  }
+
+  var promptText = 'Voce e um especialista em FIDCs. Com base nos indicadores abaixo da carteira de '
+    +ds+' do '+f.full+', escreva APENAS o paragrafo de consideracoes analiticas (sem saudacao, sem assinatura). '
+    +'Formato: comece com "**Consideracoes:**" (em negrito), depois o texto. '
+    +'Regras: (1) mencione enquadramento das razoes; (2) PDD/DC se acima de 5%; '
+    +'(3) PL resumido em milhoes (ex: R$ 81,5 milhoes); (4) caixa em milhoes; '
+    +'(5) inclua frase sobre VALID conforme instrucao; '
+    +'(6) escreva em paragrafos corridos em portugues brasileiro formal.\n\n'
+    +'Indicadores:\n'
+    +'  PL: '+fmtBRL(d.plTotal)+'\n'
+    +'  DC: '+fmtBRL(d.dcTotal)+'\n'
+    +'  DC Liquido: '+fmtBRL(d.dcLiq)+'\n'
+    +'  PDD/DC: '+pddPct+'%\n'
+    +'  Caixa: '+fmtBRL(d.caixa)+'\n'
+    +'  % DC/PL: '+fmt(d.pctDC,2)+'%\n'
+    +'  '+validCtx+'\n'
+    +'  Razoes: '+razoesSummary+'\n\n'
+    +'Instrucao VALID: '+(validInstruction||'Mencione o VALID brevemente.')+'\n\n'
+    +'Use ** para negrito (ex: **Consideracoes:**). Maximo 4 frases no paragrafo.';
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:350,
+        messages:[{role:'user', content: promptText}]})
+    });
+    var data = await resp.json();
+    var text = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text.trim() : null;
+    if (!text) throw new Error('no text');
+
+    // Convert **bold** markdown to <strong> HTML
+    var html = text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '</p><p style="font-family:'+FONT+';font-size:12px;margin:0 0 14px">')
+      .replace(/\n/g, '<br>');
+
+    bodyEl.innerHTML = buildBodyHTML(html);
+
+  } catch(err) {
+    // Fallback: build from indicators directly
+    var allOk = (d.razoes||[]).every(function(r){return r.pct>=r.min;});
+    var razStatus = allOk
+      ? 'Todos os índices de subordinação permanecem enquadrados nos parâmetros regulatórios vigentes.'
+      : 'Identificamos índices de subordinação que requerem atenção — favor verificar detalhes no relatório.';
+    var pddAlert = parseFloat(pddPct) > 5
+      ? ' O indicador de PDD/DC encontra-se em '+pddPct+'%, permanecendo sob monitoramento.'
+      : '';
+    var plM  = (d.plTotal/1e6).toFixed(1).replace('.',',');
+    var cxM  = (d.caixa/1e6).toFixed(1).replace('.',',');
+    var validFallback = d.valid != null
+      ? ' Em relação ao ativo VALID ('+fmtBRL(d.valid)+'), estamos validando junto ao nosso Administrador.'
+      : '';
+
+    var commentary = '<strong>Considerações:</strong> '
+      + razStatus + pddAlert
+      + ' O patrimônio líquido totalizou R$ '+plM+' milhões, com índice DC/PL de '
+      + fmt(d.pctDC,2)+'% e caixa disponível de R$ '+cxM+' milhões.'
+      + validFallback;
+
+    bodyEl.innerHTML = buildBodyHTML(commentary);
+  }
+}
+
+
+function sendViaMailto(){
+  const m=_currentEmailMeta;
+  const el=document.getElementById('email-body-text');
+  const body=el.innerText||el.textContent||'';
+  window.location.href='mailto:'+m.to.replace(/;/g,',')+
+    '?cc='+m.cc.replace(/;/g,',')+
+    '&subject='+encodeURIComponent(m.subject)+
+    '&body='+encodeURIComponent(body);
+}
+
+function captureReportImage(){
+  const btn=document.getElementById('btn-capture');
+  const status=document.getElementById('capture-status');
+  const d=cache[active];
+  if(!d){status.textContent='⚠ Importe um arquivo primeiro.';return;}
+  if(typeof html2canvas==='undefined'){status.textContent='⚠ html2canvas não carregado.';return;}
+  btn.disabled=true;btn.textContent='⏳ Gerando...';btn.style.opacity='0.7';
+  status.textContent='Renderizando relatório...';
+  const f=FUNDS[active];const m=_currentEmailMeta;
+  const pddPct=d.dcTotal>0?d.pdd/d.dcTotal*100:0;
+  const _b=function(v){return(v==null||isNaN(v))?'—':'R\u00a0'+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  const _p=function(v,dec){dec=dec||2;return(v==null||isNaN(v))?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+'%';};
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='position:fixed;left:-9999px;top:0;width:850px;height:1200px;border:none;opacity:0;pointer-events:none';
+  document.body.appendChild(iframe);
+  const reportHTML=buildReportPreviewHTML(d,f,m.ds||'—',_b,_p,pddPct);
+  iframe.contentDocument.open();iframe.contentDocument.write(reportHTML);iframe.contentDocument.close();
+  status.textContent='Aguardando renderização...';
+  setTimeout(function(){
+    html2canvas(iframe.contentDocument.body,{scale:2,useCORS:true,backgroundColor:'#ffffff',width:820,scrollX:0,scrollY:0,logging:false})
+    .then(function(canvas){
+      document.body.removeChild(iframe);
+      canvas.toBlob(function(blob){
+        if(navigator.clipboard&&window.ClipboardItem){
+          navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
+          .then(function(){status.innerHTML='<strong style="color:#2E7D32">✓ Imagem copiada!</strong> Cole no Outlook com Ctrl+V.';btn.textContent='✓ Copiada — Cole (Ctrl+V)';btn.style.background='#2E7D32';btn.style.color='#fff';btn.style.opacity='1';btn.disabled=false;})
+          .catch(function(){downloadImage(blob,m,status,btn);});
+        }else{downloadImage(blob,m,status,btn);}
+      },'image/png',0.95);
+    }).catch(function(err){document.body.removeChild(iframe);status.textContent='⚠ Erro: '+err.message;btn.disabled=false;btn.style.opacity='1';btn.textContent='📸 Gerar Imagem';});
+  },1500);
+}
+
+function downloadImage(blob,m,status,btn){
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='Relatorio_FIDC_'+(m.fShort||'Cedar').replace(/\s+/g,'_')+'_'+(m.dsFile||'').replace(/\//g,'')+'.png';
+  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1000);
+  status.innerHTML='<strong style="color:#2E7D32">✓ Imagem baixada!</strong> No Outlook: Inserir → Imagens.';
+  btn.textContent='📸 Imagem Baixada';btn.style.opacity='1';btn.disabled=false;
+}
+
+function buildReportPreviewHTML(d,f,ds,_b,_p,pddPct){
+  const razRows=(d.razoes||[]).map(function(rz){
+    const diff=rz.pct-rz.min;const col=diff>=3?'#2E7D32':diff>=0?'#b45309':'#C62828';
+    const bg=diff>=3?'#f0fdf4':diff>=0?'#fffbeb':'#fff5f5';
+    const lbl=diff>=3?'Enquadrado':diff>=0?'Atenção':'Desenquadrado';
+    return '<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:8px 12px;font-size:12px;font-weight:700;color:#1F3A5F">Razão — '+rz.label+'</td><td style="padding:8px 12px;font-size:14px;font-weight:700;color:'+col+';text-align:right">'+_p(rz.pct)+'</td><td style="padding:8px 12px;font-size:12px;color:#6b7280;text-align:center">'+_p(rz.min)+'</td><td style="padding:8px 12px;font-size:12px;font-weight:700;color:'+col+';text-align:center">'+(diff>=0?'+':'')+_p(diff)+'</td><td style="padding:8px 12px;text-align:center"><span style="background:'+bg+';color:'+col+';border:1px solid '+col+';border-radius:12px;padding:2px 10px;font-size:11px;font-weight:700">'+lbl+'</span></td></tr>';
+  }).join('');
+  const subRows=(d.subs||[]).map(function(s,i){
+    const info=d.igMap[s.toUpperCase()]||{};const vr=info.var!=null?info.var:null;const col=vr>0?'#2E7D32':vr<0?'#C62828':'#333';
+    return '<tr style="background:'+(i%2===0?'#fff':'#f9fafb')+'"><td style="padding:7px 12px;font-size:12px;font-weight:700;color:#0E2A47">'+s+'</td><td style="padding:7px 12px;font-size:12px;text-align:right">'+_b(info.pl)+'</td><td style="padding:7px 12px;font-size:10px;text-align:right;color:#6b7280">'+(info.cota!=null?info.cota.toFixed(8):'—')+'</td><td style="padding:7px 12px;font-size:12px;text-align:right;font-weight:700;color:'+col+'">'+(vr!=null?vr.toFixed(4)+'%':'—')+'</td></tr>';
+  }).join('');
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}body{background:#fff;width:820px;color:#333;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>'
+  +'<div style="background:#0E2A47;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="color:#fff;font-size:14px;font-weight:700">'+f.full+'</div><div style="color:#93C5FD;font-size:9px;font-weight:700;letter-spacing:1px">RELATÓRIO DIÁRIO | '+ds+'</div></div>'
+  +'<div style="padding:12px 20px"><div style="display:flex;gap:8px;margin-bottom:10px">'
+  +'<div style="flex:1;border:1px solid #d1d5db;border-radius:4px;padding:10px;border-top:4px solid #0E2A47"><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Patrimônio Líquido</div><div style="font-size:16px;font-weight:700;color:#0E2A47">'+_b(d.plTotal)+'</div></div>'
+  +'<div style="flex:1;border:1px solid #d1d5db;border-radius:4px;padding:10px;border-top:4px solid #1F3A5F"><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Direitos Creditórios</div><div style="font-size:16px;font-weight:700;color:#1F3A5F">'+_b(d.dcTotal)+'</div></div>'
+  +'<div style="flex:1;border:1px solid #fecaca;border-radius:4px;padding:10px;border-top:4px solid #C62828;background:#fff5f5"><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">PDD</div><div style="font-size:16px;font-weight:700;color:#C62828">('+_b(d.pdd)+')</div><div style="font-size:11px;font-weight:700;color:#C62828;margin-top:3px">⚠ '+_p(pddPct)+' PDD/DC</div></div>'
+  +'<div style="flex:1;border:1px solid #bbf7d0;border-radius:4px;padding:10px;border-top:4px solid #2E7D32;background:#f0fdf4"><div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Caixa</div><div style="font-size:16px;font-weight:700;color:#2E7D32">'+_b(d.caixa)+'</div></div>'
+  +'</div>'
+  +'<div style="background:#0E2A47;border-radius:4px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div><div style="font-size:9px;color:#93C5FD;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">% DC / PL</div><div style="font-size:26px;font-weight:700;color:#fff">'+_p(d.pctDC)+'</div></div><div style="text-align:right;font-size:11px;line-height:2"><div style="color:#93C5FD">DC Líquido: <strong style="color:#fff">'+_b(d.dcLiq)+'</strong></div><div style="color:#93C5FD">% PDD/DC: <strong style="color:#FCA5A5">'+_p(pddPct)+'</strong></div></div></div>'
+  +'<div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-bottom:0">Razões de Garantia</div>'
+  +'<table width="100%" style="border-collapse:collapse;border:1px solid #e5e7eb;border-top:none;margin-bottom:10px"><tr style="background:#f9fafb"><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:left;border-bottom:1px solid #e5e7eb">Índice</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:right;border-bottom:1px solid #e5e7eb">Atual</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:center;border-bottom:1px solid #e5e7eb">Mín.</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:center;border-bottom:1px solid #e5e7eb">Folga</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:center;border-bottom:1px solid #e5e7eb">Status</th></tr>'+razRows+'</table>'
+  +'<div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-bottom:0">PL por Subclasse</div>'
+  +'<table width="100%" style="border-collapse:collapse;border:1px solid #e5e7eb;border-top:none"><tr style="background:#f9fafb"><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:left;border-bottom:1px solid #e5e7eb">Subclasse</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:right;border-bottom:1px solid #e5e7eb">PL</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:right;border-bottom:1px solid #e5e7eb">Cota</th><th style="padding:8px 12px;font-size:9px;font-weight:700;color:#6b7280;text-align:right;border-bottom:1px solid #e5e7eb">Var.</th></tr>'+subRows+'</table>'
+  +'</div>'
+  +'<div style="background:#0E2A47;padding:6px 20px;margin-top:8px"><span style="color:#93C5FD;font-size:7px">Uso interno. Octante Gestora Ltda. | '+ds+'</span></div>'
+  +'</body></html>';
+}
+
+
+function openPrintPage() {
+  const d=cache[active];
+  if(!d){window.print();return;}
+  const f=FUNDS[active];
+  const LOGO_URI='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjMzIiB2aWV3Qm94PSIwIDAgMTUwIDMzIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8bWFzayBpZD0ibWFzazBfMTIwXzExNzMxIiBzdHlsZT0ibWFzay10eXBlOmx1bWluYW5jZSIgbWFza1VuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeD0iOSIgeT0iMTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjEwIj4KPHBhdGggZD0iTTEyLjM2IDE3LjU0NDZDMTIuMTYzMSAxOC4wMTgyIDkuODQ2OTcgMjMuODM2IDkuODQ2OTcgMjMuODM2QzkuNjg2MzQgMjQuMjUzNyA5LjM4Mzc0IDI0LjU1MjEgOS4zNDQzNiAyNC43MzY2QzExLjA2OTggMjUuMjM2MSAxMi41NjIxIDI1LjUzNzcgMTQuNDEwOSAyNS42NDg1VjI1LjA0MDJDMTUuMTA0MSAyNS4wNDAyIDE1LjY4ODYgMjQuMzUzMiAxNS43MDYyIDIzLjkzMzVDMTUuNjI0NCAyMC40NzQzIDE1Ljc3ODggMTguMzE0NiAxNS43NDI1IDE2LjUzMTFDMTQuNTM4MyAxNi41Nzk4IDEzLjM4NyAxNi45MjE4IDEyLjM2MSAxNy41NDQ2IiBmaWxsPSJ3aGl0ZSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjbWFzazBfMTIwXzExNzMxKSI+CjxwYXRoIGQ9Ik0xMi41NjI2IDEzLjMxMzdMNC43ODYzOCAyMS4wOUwxMi41NjI2IDI4Ljg2NjJMMjAuMzM4OSAyMS4wOUwxMi41NjI2IDEzLjMxMzdaIiBmaWxsPSJ3aGl0ZSIvPgo8L2c+CjxtYXNrIGlkPSJtYXNrMV8xMjBfMTE3MzEiIHN0eWxlPSJtYXNrLXR5cGU6bHVtaW5hbmNlIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMzMiIGhlaWdodD0iMzMiPgo8cGF0aCBkPSJNOC42MjkzMSAyMy4zODk0TDE1LjM2MDEgNi40Njk2NUMxNC44OTM4IDYuMTQzMjIgMTQuNTk4NCA1LjYwMTIzIDE0LjU5ODQgNC45OTE4OEMxNC41OTg0IDQuMDE1NjggMTUuMzcyNiAzLjIxODc2IDE2LjMzOTQgMy4xODU2QzE3LjMwNTMgMy4yMTg3NiAxOC4wNzk0IDQuMDE2NzIgMTguMDc5NCA0Ljk5MTg4QzE4LjA3OTQgNS41MDc5NiAxNy44NjY5IDUuOTc3NDEgMTcuNTE5OCA2LjMwNjk1TDI0LjUxNTkgMjIuODE0M0MyNC41MTU5IDIyLjkwNTUgMjQuNjk5MyAyMy4zMzAzIDI1LjA2MiAyNC4wODg5QzI1LjU2MzYgMjMuODk5MyAyNi4wNTg5IDIzLjY5MiAyNi41NDkxIDIzLjQ2NEMyNi44NzI0IDIzLjMyIDI3LjM5NjggMjMuNDIyNiAyNy4zOTQ3IDIzLjcxNThDMjcuMzkyNyAyNC4wMTEyIDI3LjI1OSAyNC4xNjc3IDI2LjkzOTggMjQuMzI2MkMyNi40OTk0IDI0LjUzODcgMjUuOTk5OSAyNC43Mzg3IDI1LjU0NiAyNC45MjUyTDIzLjY3MTMgMjUuNTczOUMyMS43MDY0IDI2LjIxNDQgMTkuNDk2IDI2LjU5NDcgMTcuNDE2MSAyNi43MjIyVjI3Ljc5MjdIMTQuNDA5OFYyNi43MjIyQzEyLjMyODkgMjYuNTkzNyAxMC41NDc1IDI2LjIxNDQgOC41ODI2OCAyNS41NzM5QzguNTgyNjggMjUuNTczOSA4LjEyMjU2IDI1LjM1NjMgNy44MTg5MiAyNS4yMzgyQzcuMDk2NjIgMjQuOTY1NiA2LjM4NDY4IDI0LjY2NDEgNS42ODUxNyAyNC4zMjYyQzUuMzY3MDIgMjQuMTY3NyA1LjI1NzE4IDI0LjAxMTIgNS4yNTcxOCAyMy43MTU4QzUuMjU3MTggMjMuNDIwNSA1LjgxMjY0IDIzLjMyIDYuMTM1OTYgMjMuNDY0QzYuOTQ5NDYgMjMuODQzMyA3LjMyMTUgMjQuMTY4NyA4LjE2NTA1IDI0LjQ0OTVDOC4zMTQyOCAyNC4xODAxIDguNDY2NjEgMjMuODI5OCA4LjYyOTMxIDIzLjM4OTRaTTUuMzM0OSAwQzIuMzg4NjggMCAwIDIuMzg4NjggMCA1LjMzNDlWMjcuNDkyMUMwIDMwLjQzODQgMi4zODg2OCAzMi44MjcgNS4zMzQ5IDMyLjgyN0gyNy40OTIxQzMwLjQzODQgMzIuODI3IDMyLjgyNyAzMC40Mzg0IDMyLjgyNyAyNy40OTIxVjUuMzM0OUMzMi44MjcgMi4zODg2OCAzMC40Mzg0IDAgMjcuNDkyMSAwSDUuMzM1OTNINS4zMzQ5WiIgZmlsbD0id2hpdGUiLz4KPC9tYXNrPgo8ZyBtYXNrPSJ1cmwoI21hc2sxXzEyMF8xMTczMSkiPgo8cGF0aCBkPSJNMTYuNDE0OSAtMTYuNDE0OEwtMTYuNDEyOCAxNi40MTNMMTYuNDE0OSA0OS4yNDA3TDQ5LjI0MjYgMTYuNDEzTDE2LjQxNDkgLTE2LjQxNDhaIiBmaWxsPSJ3aGl0ZSIvPgo8L2c+CjxtYXNrIGlkPSJtYXNrMl8xMjBfMTE3MzEiIHN0eWxlPSJtYXNrLXR5cGU6bHVtaW5hbmNlIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIxNiIgeT0iMTAiIHdpZHRoPSI0IiBoZWlnaHQ9IjciPgo8cGF0aCBkPSJNMTYuOTUyOSAxNS43OTAxQzE3LjY1OTcgMTUuODk5IDE4LjQ1MDQgMTYuMTMxMSAxOS41MjMgMTYuNDg5NkMxOS4wODQ2IDE1LjQyMzMgMTcuOTE3NyAxMi42MDE0IDE3LjA2MzggMTAuNTM3MUMxNy4wMTcyIDEyLjY1NDMgMTYuOTg4MiAxNC4xMDEgMTYuOTUyOSAxNS43OTAxWiIgZmlsbD0id2hpdGUiLz4KPC9tYXNrPgo8ZyBtYXNrPSJ1cmwoI21hc2syXzEyMF8xMTczMSkiPgo8cGF0aCBkPSJNMTguMjM4IDkuMjUzMDVMMTMuOTc2OSAxMy41MTQyTDE4LjIzOCAxNy43NzUzTDIyLjQ5OTEgMTMuNTE0MkwxOC4yMzggOS4yNTMwNVoiIGZpbGw9IndoaXRlIi8+CjwvZz4KPG1hc2sgaWQ9Im1hc2szXzEyMF8xMTczMSIgc3R5bGU9Im1hc2stdHlwZTpsdW1pbmFuY2UiIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9IjEyIiB5PSI5IiB3aWR0aD0iNCIgaGVpZ2h0PSI4Ij4KPHBhdGggZD0iTTEyLjg1NDMgMTYuMzk2NEMxNC4wNzUxIDE1Ljk5ODUgMTQuOTIyOCAxNS43NzY3IDE1LjcyNDkgMTUuNzI4QzE1LjY4NDUgMTMuNzg2IDE1LjY1MjMgMTIuMTQ5NyAxNS41OTAyIDkuNDE5MDFDMTQuNzMgMTEuNjE3IDEzLjAyMjIgMTUuOTc3OCAxMi44NTQzIDE2LjM5NjRaIiBmaWxsPSJ3aGl0ZSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjbWFzazNfMTIwXzExNzMxKSI+CjxwYXRoIGQ9Ik0xNC4yODk3IDcuOTgzMDJMOS4zNjU0OCAxMi45MDczTDE0LjI4OTcgMTcuODMxNkwxOS4yMTQgMTIuOTA3M0wxNC4yODk3IDcuOTgzMDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L2c+CjxtYXNrIGlkPSJtYXNrNF8xMjBfMTE3MzEiIHN0eWxlPSJtYXNrLXR5cGU6bHVtaW5hbmNlIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIxNiIgeT0iMTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjEwIj4KPHBhdGggZD0iTTE2LjU0OTggMjMuOTM0NUMxNi41NjMzIDI0LjM1NDMgMTYuNzIxOCAyNS4wNDEzIDE3LjQxNjIgMjUuMDQxM1YyNS42NTE3QzE5LjAzNDkgMjUuNTUyMiAyMC44Mjk3IDI1LjI5NzMgMjIuMzg5NCAyNC44ODI4QzIyLjM5MDQgMjQuODY5MyAyMi42MTQzIDI0Ljg1MzggMjIuNjE0MyAyNC44MzgyQzIyLjYxNDMgMjQuNTk5OSAyMi41MDU1IDI0LjIxNjQgMjIuMjg3OCAyMy42OTcyQzIyLjI0NzQgMjMuNjU3OSAyMi4yMTYzIDIzLjU5MzYgMjIuMTg3MyAyMy41MTE3QzIyLjE2NzYgMjMuNDE2NCAyMi4xNTQxIDIzLjM2ODcgMjIuMTQ2OSAyMy4zNjg3QzIyLjE0NjkgMjMuMzY4NyAyMC4xOTc2IDE4LjMxNjcgMTkuODk3MSAxNy41NDU3QzE4LjkwMDEgMTcuMDE1MSAxNy44MjU1IDE2LjY5NyAxNi44MjQ0IDE2LjU3NjhDMTYuNzg3MSAxOC4zNTMgMTYuNjI5NiAyMC41MDQ0IDE2LjU0OTggMjMuOTM0NVoiIGZpbGw9IndoaXRlIi8+CjwvbWFzaz4KPGcgbWFzaz0idXJsKCNtYXNrNF8xMjBfMTE3MzEpIj4KPHBhdGggZD0iTTE5LjU4MjkgMTMuNTQ0MUwxMi4wMTI2IDIxLjExNDRMMTkuNTgyOSAyOC42ODQ4TDI3LjE1MzIgMjEuMTE0NEwxOS41ODI5IDEzLjU0NDFaIiBmaWxsPSJ3aGl0ZSIvPgo8L2c+CjxtYXNrIGlkPSJtYXNrNV8xMjBfMTE3MzEiIHN0eWxlPSJtYXNrLXR5cGU6bHVtaW5hbmNlIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjMzIj4KPHBhdGggZD0iTTE1MCAwSDAuMDAxMDM3NlYzMi44MjdIMTUwVjBaIiBmaWxsPSJ3aGl0ZSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjbWFzazVfMTIwXzExNzMxKSI+CjxwYXRoIGQ9Ik00OS43NDU3IDUuMjg0MDZDNTQuNjgwNiA1LjI4NDA2IDU3LjkzODcgOC44NTcyNCA1Ny45Mzg3IDE0LjAxMThDNTcuOTM4NyAxOS4xNjY0IDU0LjY4MDYgMjMuMjk5MiA0OS40NTM1IDIzLjI5OTJDNDQuMjI2MyAyMy4yOTkyIDQxLjI2MDQgMTkuNDU3NiA0MS4yNjA0IDE0LjU5NTNDNDEuMjYwNCA4LjczNTk5IDQ1LjI5NTggNS4yODQwNiA0OS43NDU3IDUuMjg0MDZaTTQ5LjMwNzMgNi41MjM0OEM0Ni4xNDY2IDYuNTIzNDggNDMuOTgyOCA5LjIyMjAyIDQzLjk4MjggMTMuODE3QzQzLjk4MjggMTguMTE5NyA0Ni4wNDkyIDIyLjAzNDkgNDkuODE4MiAyMi4wMzQ5QzUzLjI5NSAyMi4wMzQ5IDU1LjIxNTMgMTkuMjYyOCA1NS4yMTUzIDE1LjA1NzVDNTUuMjE1MyAxMC4yNDM4IDUzLjIyMTUgNi41MjM0OCA0OS4zMDczIDYuNTIzNDhaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNjEuODM5NCAxNC4yMzA1QzYxLjgzOTQgMTkuMzYxMyA2NS4wOTY1IDIxLjQwMjggNjguMDYzNSAyMS40MDI4QzY5Ljg4NzQgMjEuNDAyOCA3MS4zNzAzIDIwLjc0NjggNzIuMjQ1IDIwLjIzNTlDNzIuNDM4NyAyMC4xMTQ3IDcyLjcwNzEgMTkuOTkzNCA3Mi44Mjg0IDE5Ljk5MzRDNzMuMTIwNiAxOS45OTM0IDczLjMxNDQgMjAuMjg1NiA3My4zMTQ0IDIwLjUwMzNDNzMuMzE0NCAyMC42MjQ1IDczLjI2NTcgMjAuNzcwNiA3My4wOTU4IDIwLjkxNjhDNzIuMDk4OCAyMS43OTI0IDcwLjAzMjQgMjMuMjk5MiA2Ny4yMTE2IDIzLjI5OTJDNjMuNDkxMyAyMy4yOTkyIDU5LjI4NTkgMjAuNzQ2OCA1OS4yODU5IDE0LjY2ODlDNTkuMjg1OSA5LjMxOTQ2IDYyLjY2NTMgNS4zMDg5NiA2OS4zMDI5IDUuMzA4OTZDNzAuMzcyMyA1LjMwODk2IDcxLjQ5MTYgNS40Nzg5MiA3Mi4xNDc1IDUuNzcwMTJDNzIuNTM2MiA1Ljk0MDA3IDcyLjY4MjMgNi4xMTEwNiA3Mi43MzEgNi41NzIyMkM3Mi44Mjg0IDcuMzUwNDggNzIuODc3MSA4LjczNjAyIDcyLjg3NzEgOS4wMDMzOUM3Mi44NzcxIDkuMzkyIDcyLjcwNzEgOS41NjE5NiA3Mi40MTU5IDkuNTYxOTZDNzIuMDk5OSA5LjU2MTk2IDcxLjk3NzYgOS40NDA3MSA3MS43MTAyIDguOTU0NjhDNzEuMDI5NCA3Ljc2MjkzIDcwLjY0MDcgNy4yMjgyIDcwLjI1MjEgNi45ODU3QzY5Ljg4NzQgNi43NDIxNyA2OS4wMzY1IDYuNjIwOTIgNjguMDg4MyA2LjYyMDkyQzYzLjkzMDcgNi42MjA5MiA2MS44NDA0IDEwLjA0OSA2MS44NDA0IDE0LjIzMDUiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik04Ny45NzUgNS42OTc2M0M4OC4yMTg1IDUuNjk3NjMgODguMzM5OCA1LjgxODg4IDg4LjMzOTggNi4wNjI0MUM4OC4zODc1IDcuMjI5MjkgODguNDM3MiA5LjA3NzAyIDg4LjQzNzIgOS4zNDQzOUM4OC40MzcyIDkuNTYzMDUgODguMzg4NSA5Ljc4MTcxIDg4LjAyMzcgOS43ODE3MUM4Ny44MDUgOS43ODE3MSA4Ny42MTAyIDkuNjM2NjMgODcuNTEzOCA5LjQxNjkzQzg2Ljg4MTcgNy44MzY1NyA4Ni41ODk1IDcuMzI1NjcgODYuMjQ5NSA3LjEzMTg4Qzg1LjkwODYgNi45MzcwNSA4NS41MiA2LjgzOTY0IDg0LjEwOTYgNi44Mzk2NEM4My4wNjUgNi44Mzk2NCA4Mi42MDI4IDYuODg4MzUgODIuNDgwNSA3LjA4MjE0QzgyLjM1OTMgNy4yNTIwOSA4Mi4zMzQ0IDcuNDk1NjIgODIuMzM0NCA3Ljk1NzgxQzgyLjMxMDYgOS4xMjQ2OSA4Mi4yODU3IDE3LjgwMzggODIuMjg1NyAyMC4xNjI0QzgyLjI4NTcgMjAuODE5NCA4Mi4zMDk1IDIxLjIzMTggODIuNTA0MyAyMS40NTE1QzgyLjY5OTIgMjEuNjcwMiA4My4wODc4IDIxLjc2NzYgODQuMTU3MiAyMi4xMDc1Qzg0LjQwMDggMjIuMTgwMSA4NC40OTgyIDIyLjMwMjQgODQuNDk4MiAyMi41MjFDODQuNDk4MiAyMi44NjIgODQuMzAzNCAyMi45MDk2IDg0LjEwODUgMjIuOTA5NkM4My44NjUgMjIuOTA5NiA4Mi40NTU2IDIyLjgzNzEgODEuMDIwNCAyMi44MzcxQzc5LjU4NTEgMjIuODM3MSA3OC42NjI4IDIyLjkwOTYgNzguMzQ1NyAyMi45MDk2Qzc4LjEyNyAyMi45MDk2IDc3LjkzMjIgMjIuODM3MSA3Ny45MzIyIDIyLjUyMUM3Ny45MzIyIDIyLjMwMjQgNzguMDA0NyAyMi4yMDQ5IDc4LjI0ODIgMjIuMTA3NUM3OS4wNTE0IDIxLjg0MDIgNzkuNDYzOCAyMS43NDI3IDc5LjczMTIgMjEuNTAwMkM3OS45MjYgMjEuMzA1NCA3OS45MjYgMjAuODQ0MyA3OS45MjYgMjAuMzA4NUM3OS45MjYgMTcuOTk4NiA3OS44Mjg2IDkuMDI3MjggNzkuODA0OCA3Ljk4MjY5Qzc5LjgwNDggNy40OTY2NiA3OS43NTYxIDcuMjI5MjkgNzkuNjM0OCA3LjA4MjE0Qzc5LjUxMzYgNi45MTIxOCA3OS4wNzUyIDYuODM5NjQgNzguMDMwNiA2LjgzOTY0Qzc2LjYyMDIgNi44Mzk2NCA3Ni4yMDY3IDYuODg4MzUgNzUuNzY5NCA3LjIyOTI5Qzc1LjUyNjkgNy40MjMwOCA3NS4yMzQ3IDcuODM2NTcgNzQuNTUzOCA5LjQ2NTY0Qzc0LjQ1NzQgOS42ODQzIDc0LjI4NjQgOS43ODE3MSA3NC4wNjc4IDkuNzgxNzFDNzMuNzUxNyA5Ljc4MTcxIDczLjY1NDMgOS41MzkyMiA3My42NTQzIDkuMjk1NjhDNzMuNjU0MyA4Ljk3OTYxIDczLjgwMDQgNi43NDMyNiA3My44NzMgNi4wNjI0MUM3My44OTY4IDUuODE4ODggNzMuOTcwNCA1LjY5NzYzIDc0LjIxMzkgNS42OTc2M0M3NS4xMzgzIDUuNjk3NjMgNzguMjAxNiA1Ljc0NjM0IDgxLjA0NjMgNS43NDYzNEM4My44OTA5IDUuNzQ2MzQgODcuMjk0MSA1LjY5NzYzIDg3Ljk3NSA1LjY5NzYzWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTkyLjEwODggMTYuMzcwNUM5MC45NjU4IDE5LjIzOSA5MC41Mjg0IDIwLjQzMDggOTAuNTI4NCAyMS4wMzhDOTAuNTI4NCAyMS4yODA1IDkwLjYyNTkgMjEuNTI0MSA5MC44MjA3IDIxLjY0NTNDOTEuMDg4MSAyMS43OTE0IDkxLjQ1MjggMjEuODg4OCA5Mi4yMzExIDIyLjA4MzdDOTIuNTIyMyAyMi4xNTYyIDkyLjY5MjIgMjIuMjI4NyA5Mi42OTIyIDIyLjU2OTdDOTIuNjkyMiAyMi43MTU4IDkyLjU0NjEgMjIuOTEwNiA5Mi4zMjc1IDIyLjkxMDZDOTIuMDM1MiAyMi45MTA2IDkwLjQ1NDkgMjIuODYxOSA4OS41NTU0IDIyLjg2MTlDODguOTIzMiAyMi44NjE5IDg3LjI2OTMgMjIuOTEwNiA4Ni45Mjk0IDIyLjkxMDZDODYuNzM0NSAyMi45MTA2IDg2LjUxNTkgMjIuODEzMiA4Ni41MTU5IDIyLjUyMUM4Ni41MTU5IDIyLjI1MzYgODYuNzEwNyAyMi4xMzEzIDg2Ljg1NTggMjIuMTA3NUM4OC4xMjAxIDIxLjc5MTQgODguNDEyMyAyMS41NzI4IDg5LjM4NDQgMTkuMjYyOEM5MC45NjQ3IDE1LjQ0NjEgOTMuMzIzNCA5LjU4NTgyIDk0Ljc4MTQgNS45ODc3N0M5NC45NzYzIDUuNDc2ODcgOTUuMTk0OSA1LjI4MzA4IDk1LjU1OTcgNS4yODMwOEM5NS44OTk2IDUuMjgzMDggOTYuMDY5NiA1LjQ3Njg3IDk2LjIxNTcgNS45MTUyM0M5Ny4wOTE0IDguNTY1MDYgOTguMTM2IDExLjYyODQgMTAxLjAyOSAxOS40ODE1QzEwMS44MzEgMjEuNjIwNCAxMDIuMTQ3IDIxLjc5MTQgMTAzLjQ4NCAyMi4xMDc1QzEwMy42MyAyMi4xMzEzIDEwMy44IDIyLjI1MzYgMTAzLjggMjIuNTIxQzEwMy44IDIyLjgxMzIgMTAzLjYwNiAyMi45MTA2IDEwMy40MzYgMjIuOTEwNkMxMDMuMDk1IDIyLjkxMDYgMTAxLjY2IDIyLjg2MTkgMTAwLjc4NiAyMi44NjE5Qzk5LjkxMTIgMjIuODYxOSA5Ny4yMzY0IDIyLjkxMDYgOTYuOTQ0MiAyMi45MTA2Qzk2LjcyNTUgMjIuOTEwNiA5Ni41Nzk0IDIyLjcxNTggOTYuNTc5NCAyMi41NDU5Qzk2LjU3OTQgMjIuMjA0OSA5Ni43NDk0IDIyLjE1NzIgOTcuMDQxNiAyMi4wODQ3Qzk3LjkxNzMgMjEuODg5OSA5OC40MjcyIDIxLjc2ODYgOTguNjIyIDIxLjYyMjVDOTguNzY4MSAyMS41MDEzIDk4Ljg4OTQgMjEuMzMxMyA5OC44ODk0IDIxLjA2MzlDOTguODg5NCAyMC40MDggOTguMzA1OSAxOC45MjQgOTcuMzgyNiAxNi4zNzE1SDkyLjEwNjdMOTIuMTA4OCAxNi4zNzA1Wk05Ny4wMTk5IDE1LjIwMzZDOTYuMDk1NSAxMi41Mjg5IDk1LjI0NTcgMTAuMTQ2NSA5NC44ODA5IDkuMTAxODdDOTQuNDE4NyAxMC4zNDEzIDkzLjY0MDUgMTIuMjg2NCA5Mi41MjIzIDE1LjIwMzZIOTcuMDE5OVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xMDcuOTY4IDIwLjM1NzJDMTA3Ljk5MiAyMC44OTE5IDEwOC4wNjYgMjEuMjgxNiAxMDguMjYxIDIxLjQ3NTRDMTA4LjU1MiAyMS43NDI3IDEwOS4xMTEgMjEuOTEyNyAxMDkuOTg3IDIyLjA4MjdDMTEwLjIzMSAyMi4xMzE0IDExMC4zMjggMjIuMzAxMyAxMTAuMzI4IDIyLjUyMUMxMTAuMzI4IDIyLjgzNzEgMTEwLjEzMyAyMi45MDk2IDEwOS45MTUgMjIuOTA5NkMxMDkuNTk5IDIyLjkwOTYgMTA4LjU1MyAyMi44MzcxIDEwNy4xOTEgMjIuODM3MUMxMDUuNzU3IDIyLjgzNzEgMTA0LjgwOSAyMi45MDk2IDEwNC41NjUgMjIuOTA5NkMxMDQuMzcgMjIuOTA5NiAxMDQuMTAzIDIyLjgzNzEgMTA0LjEwMyAyMi40OTYxQzEwNC4xMDMgMjIuMjUyNiAxMDQuMiAyMi4xMzE0IDEwNC40NDQgMjIuMDU3OEMxMDUuMzkyIDIxLjgxNDIgMTA1LjkwMiAyMS42NDQzIDEwNi4wNDggMjEuNDI1NkMxMDYuMjQzIDIxLjE1ODMgMTA2LjI2NyAyMC44MTg0IDEwNi4yOTIgMjAuMTg1MkMxMDYuMzg5IDE2LjEwMTEgMTA2LjQzNyAxMC4yNjU3IDEwNi40MzcgOC4yOTY2OEMxMDYuNDM3IDcuNzg1NzggMTA2LjMxNiA3LjQ5NDU4IDEwNi4xNjkgNy4zMjQ2M0MxMDUuODUzIDYuOTU5ODUgMTA1LjEyNCA2LjY5MjQ4IDEwNC4yOTggNi41MjI1M0MxMDQuMDU0IDYuNDczODIgMTAzLjk4MiA2LjMwMzg3IDEwMy45ODIgNi4wODQxN0MxMDMuOTgyIDUuNzY4MSAxMDQuMTc3IDUuNjk1NTYgMTA0LjM5NSA1LjY5NTU2QzEwNC43MTEgNS42OTU1NiAxMDUuMzQzIDUuNzQ0MjYgMTA2LjYwOCA1Ljc0NDI2QzEwNi45NzMgNS43NDQyNiAxMDcuNjUzIDUuNzIwNDMgMTA3Ljk2OSA1LjcyMDQzQzEwOC4zNTggNS43MjA0MyAxMDguNTI4IDUuODQxNjcgMTA4Ljc5NiA2LjIzMDI5QzEwOS43MjEgNy41MTk0NSAxMTMuMTczIDEyLjEzODMgMTE3Ljg2NSAxOC4zNjIzQzExNy43NDQgMTUuMDA3OCAxMTcuNzE5IDEwLjg5ODggMTE3LjU5OCA4LjQxODk3QzExNy41NzMgNy42NjU1NyAxMTcuNDc3IDcuMzAwNzkgMTE3LjIzMyA3LjEyOThDMTE2LjkxNyA2Ljg2MjQ0IDExNi4zNTcgNi43MTYzMiAxMTUuNjI5IDYuNTQ2MzZDMTE1LjM4NSA2LjQ5NzY2IDExNS4yODggNi4zMDI4MyAxMTUuMjg4IDYuMDg0MTdDMTE1LjI4OCA1Ljc2ODEgMTE1LjQ4MyA1LjY5NTU2IDExNS43MDEgNS42OTU1NkMxMTYuMDE3IDUuNjk1NTYgMTE3LjAxNCA1Ljc2ODEgMTE4LjM3NiA1Ljc2ODFDMTE5LjgxIDUuNzY4MSAxMjAuNzU4IDUuNjk1NTYgMTIxLjAwMiA1LjY5NTU2QzEyMS4xOTcgNS42OTU1NiAxMjEuMzkyIDUuNzQ0MjYgMTIxLjM5MiA2LjA4NDE3QzEyMS4zOTIgNi4zMDI4MyAxMjEuMjk0IDYuNDczODIgMTIxLjA1MSA2LjU0NjM2QzEyMC4xMDMgNi44MTM3MyAxMTkuNjY0IDYuOTM0OTggMTE5LjQ3IDcuMjAyMzRDMTE5LjMyNCA3LjQyMSAxMTkuMjc2IDcuODEwNjYgMTE5LjI1MiA4LjQ0MjhDMTE5LjE3OSAxMS4wMjAxIDExOS4xNzkgMTMuNjY5OSAxMTkuMTc5IDE1LjcxMjVDMTE5LjE3OSAxOC45NDY4IDExOS4zIDIxLjY5NCAxMTkuMyAyMi42ODk5QzExOS4zIDIzLjEyODMgMTE5LjAzMyAyMy4yMjQ3IDExOC44MTQgMjMuMjI0N0MxMTguNTcxIDIzLjIyNDcgMTE4LjM1MyAyMy4xNTIxIDExOC4yMDcgMjIuOTMyNEMxMTUuNzAzIDE5LjQ1NTYgMTA5Ljk2NSAxMS44MjEyIDEwNy43NTMgOC45Mjg4M0MxMDcuODI1IDE1LjUxNzcgMTA3Ljg3NCAxOC41MzIzIDEwNy45NzIgMjAuMzU2MiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEzNi4wNzQgNS42OTc2M0MxMzYuMzE4IDUuNjk3NjMgMTM2LjQzOSA1LjgxODg4IDEzNi40MzkgNi4wNjI0MUMxMzYuNDg3IDcuMjI5MjkgMTM2LjUzNiA5LjA3NzAyIDEzNi41MzYgOS4zNDQzOUMxMzYuNTM2IDkuNTYzMDUgMTM2LjQ4OCA5Ljc4MTcxIDEzNi4xMjMgOS43ODE3MUMxMzUuOTA0IDkuNzgxNzEgMTM1LjcwOSA5LjYzNjYzIDEzNS42MTMgOS40MTY5M0MxMzQuOTgxIDcuODM2NTcgMTM0LjY4OSA3LjMyNTY3IDEzNC4zNDkgNy4xMzE4OEMxMzQuMDA4IDYuOTM3MDUgMTMzLjYxOSA2LjgzOTY0IDEzMi4yMDkgNi44Mzk2NEMxMzEuMTY0IDYuODM5NjQgMTMwLjcwMiA2Ljg4ODM1IDEzMC41OCA3LjA4MjE0QzEzMC40NTggNy4yNTIwOSAxMzAuNDMzIDcuNDk1NjIgMTMwLjQzMyA3Ljk1NzgxQzEzMC40MSA5LjEyNDY5IDEzMC4zODUgMTcuODAzOCAxMzAuMzg1IDIwLjE2MjRDMTMwLjM4NSAyMC44MTk0IDEzMC40MDkgMjEuMjMxOCAxMzAuNjAzIDIxLjQ1MTVDMTMwLjc5OCAyMS42NzAyIDEzMS4xODcgMjEuNzY3NiAxMzIuMjU2IDIyLjEwNzVDMTMyLjUgMjIuMTgwMSAxMzIuNTk3IDIyLjMwMjQgMTMyLjU5NyAyMi41MjFDMTMyLjU5NyAyMi44NjIgMTMyLjQwMiAyMi45MDk2IDEzMi4yMDggMjIuOTA5NkMxMzEuOTY0IDIyLjkwOTYgMTMwLjU1NSAyMi44MzcxIDEyOS4xMTkgMjIuODM3MUMxMjcuNjg0IDIyLjgzNzEgMTI2Ljc2MiAyMi45MDk2IDEyNi40NDUgMjIuOTA5NkMxMjYuMjI2IDIyLjkwOTYgMTI2LjAzMSAyMi44MzcxIDEyNi4wMzEgMjIuNTIxQzEyNi4wMzEgMjIuMzAyNCAxMjYuMTA0IDIyLjIwNDkgMTI2LjM0NyAyMi4xMDc1QzEyNy4xNSAyMS44NDAyIDEyNy41NjMgMjEuNzQyNyAxMjcuODMgMjEuNTAwMkMxMjguMDI1IDIxLjMwNTQgMTI4LjAyNSAyMC44NDQzIDEyOC4wMjUgMjAuMzA4NUMxMjguMDI1IDE3Ljk5ODYgMTI3LjkyOCA5LjAyNzI4IDEyNy45MDQgNy45ODI2OUMxMjcuOTA0IDcuNDk2NjYgMTI3Ljg1NSA3LjIyOTI5IDEyNy43MzQgNy4wODIxNEMxMjcuNjEzIDYuOTEyMTggMTI3LjE3NCA2LjgzOTY0IDEyNi4xMyA2LjgzOTY0QzEyNC43MTkgNi44Mzk2NCAxMjQuMzA2IDYuODg4MzUgMTIzLjg2OCA3LjIyOTI5QzEyMy42MjYgNy40MjMwOCAxMjMuMzM0IDcuODM2NTcgMTIyLjY1MyA5LjQ2NTY0QzEyMi41NTYgOS42ODQzIDEyMi4zODYgOS43ODE3MSAxMjIuMTY3IDkuNzgxNzFDMTIxLjg1MSA5Ljc4MTcxIDEyMS43NTMgOS41MzkyMiAxMjEuNzUzIDkuMjk1NjhDMTIxLjc1MyA4Ljk3OTYxIDEyMS44OTkgNi43NDMyNiAxMjEuOTcyIDYuMDYyNDFDMTIxLjk5NiA1LjgxODg4IDEyMi4wNjkgNS42OTc2MyAxMjIuMzEzIDUuNjk3NjNDMTIzLjIzNyA1LjY5NzYzIDEyNi4zMDEgNS43NDYzNCAxMjkuMTQ1IDUuNzQ2MzRDMTMxLjk5IDUuNzQ2MzQgMTM1LjM5MyA1LjY5NzYzIDEzNi4wNzQgNS42OTc2M1oiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNDQuNjc0IDEzLjMzMTFDMTQ1LjIwOSAxMy4yODI0IDE0NS42OTUgMTMuMTg0OSAxNDUuODkgMTIuOTkwMUMxNDYuMTMzIDEyLjcyMjcgMTQ2LjIzIDEyLjMzNDEgMTQ2LjUyMiAxMS41MzJDMTQ2LjU5NSAxMS4yODg1IDE0Ni43MTcgMTEuMTkxMSAxNDYuOTgzIDExLjE5MTFDMTQ3LjI5OSAxMS4xOTExIDE0Ny4zNzMgMTEuMzg1OSAxNDcuMzczIDExLjYwNDZDMTQ3LjM3MyAxMS45MjA2IDE0Ny4zNDkgMTIuNjc0IDE0Ny4zNDkgMTMuNzY4NEMxNDcuMzQ5IDE1LjIwMjYgMTQ3LjM3MyAxNi4wNzgzIDE0Ny4zNzMgMTYuMzIwOEMxNDcuMzczIDE2LjUxNTYgMTQ3LjMyNCAxNi43NTgxIDE0Ni45ODMgMTYuNzU4MUMxNDYuNzQxIDE2Ljc1ODEgMTQ2LjU5NSAxNi41ODgyIDE0Ni41MjIgMTYuMzQ0NkMxNDYuMTU3IDE1LjMyMzkgMTQ2LjAzNiAxNS4wODAzIDE0NS44NDEgMTQuOTEwNEMxNDUuNjIzIDE0LjcxNTYgMTQ1LjE4NSAxNC42Njc5IDE0NC41NTIgMTQuNjE5MkMxNDMuODcxIDE0LjU3MDUgMTQxLjgwNSAxNC40OTc5IDE0MS4xMjQgMTQuNDk3OUMxNDEuMSAxNS4wODE0IDE0MS4xIDE3Ljk5ODYgMTQxLjEgMTkuNTMwMkMxNDEuMSAyMC41NTEgMTQxLjEyNCAyMS4wMTMyIDE0MS40ODkgMjEuMjgwNkMxNDIgMjEuNjk0IDE0My40MzQgMjEuNzE4OSAxNDQuNzQ3IDIxLjcxODlDMTQ2LjYxOSAyMS43MTg5IDE0Ny4yNzUgMjEuNTI0MSAxNDcuNzYyIDIxLjExMTZDMTQ4LjAwNCAyMC45MTY4IDE0OC4zNjkgMjAuMjM2IDE0OC45MDUgMTguOTcxN0MxNDkuMDAxIDE4LjcyODEgMTQ5LjE3MiAxOC42MDY5IDE0OS40MTQgMTguNjA2OUMxNDkuNzU0IDE4LjYwNjkgMTQ5Ljg1MiAxOC44MDE3IDE0OS44NTIgMTkuMDQ1MkMxNDkuODUyIDE5LjM2MTMgMTQ5LjczIDIxLjIzMzkgMTQ5LjYwOSAyMi41MjJDMTQ5LjU4NCAyMi43NjU2IDE0OS40NjMgMjIuOTExNyAxNDkuMjIgMjIuOTExN0MxNDYuNTk0IDIyLjkxMTcgMTQwLjQ0MyAyMi44NjMgMTQwLjAzIDIyLjg2M0MxMzguNjY4IDIyLjg2MyAxMzcuNTAxIDIyLjkxMTcgMTM3LjE4NSAyMi45MTE3QzEzNi45NjYgMjIuOTExNyAxMzYuNzcxIDIyLjgzOTIgMTM2Ljc3MSAyMi41MjJDMTM2Ljc3MSAyMi4zMDM0IDEzNi44NDQgMjIuMTgxMSAxMzcuMDg4IDIyLjEwODZDMTM3Ljg5IDIxLjg0MTIgMTM4LjI3OSAyMS43NDM4IDEzOC41NDYgMjEuNTAxM0MxMzguNzQgMjEuMzA3NSAxMzguNzQgMjAuODQ1MyAxMzguNzQgMjAuMzEwNkMxMzguNzQgMTguMDAwNiAxMzguNjQzIDEwLjAwMjQgMTM4LjY0MyA4LjI1MTA5QzEzOC42NDMgNy43MTYzNSAxMzguNjE5IDcuMzI2NyAxMzguNDQ5IDcuMTMyOTJDMTM4LjIwNiA2Ljg2NTU1IDEzNy43OTIgNi43OTE5NyAxMzYuOTkxIDYuNTI0NkMxMzYuNzQ4IDYuNDUyMDYgMTM2LjY3NSA2LjMwNTk0IDEzNi42NzUgNi4wODcyOEMxMzYuNjc1IDUuNzcxMjEgMTM2Ljg2OSA1LjY5NzYzIDEzNy4wODkgNS42OTc2M0MxMzcuNDA1IDUuNjk3NjMgMTM4LjQ3NSA1Ljc0NjM0IDEzOS43ODcgNS43NDYzNEMxNDAuMjAxIDUuNzQ2MzQgMTQ1LjYyMyA1LjY5NzYzIDE0OC4yNDggNS42OTc2M0MxNDguNDkxIDUuNjk3NjMgMTQ4LjYxMiA1LjgxODg4IDE0OC42MzcgNi4wODcyOEMxNDguNzEgNy40NzI4MiAxNDguNzU4IDguOTA3MDcgMTQ4Ljc1OCA5LjE3NTQ3QzE0OC43NTggOS4zNjkyNiAxNDguNjYyIDkuNTY0MDkgMTQ4LjM0NSA5LjU2NDA5QzE0OC4xMDEgOS41NjQwOSAxNDcuOTU2IDkuNDkxNTUgMTQ3LjgzNCA5LjI0ODAxQzE0Ny4zMjQgOC4xNTM2OCAxNDcuMDU2IDcuNjQyNzggMTQ2Ljg2MiA3LjQyNDEyQzE0Ni40NzIgNi45NjI5NiAxNDYuMDU5IDYuODE2ODQgMTQzLjAyIDYuODE2ODRDMTQxLjc4IDYuODE2ODQgMTQxLjQ2NCA2Ljg4OTM4IDE0MS4zNDMgNy4wMTE2N0MxNDEuMTczIDcuMTgxNjIgMTQxLjE5NyA3LjM3NjQ1IDE0MS4xNzMgNy44Mzg2NEMxNDEuMTI0IDkuNTE2NDIgMTQxLjEyNCAxMC45OTk0IDE0MS4xMjQgMTMuNDc5MkMxNDEuNjEgMTMuNDc5MiAxNDMuOTIgMTMuNDA2NyAxNDQuNjczIDEzLjMzMzEiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNTAgMjcuMTMxNUMxNTAgMjcuMTMxNSAxMjkuMjEgMzAuMDI1OSA5NS41NDIxIDMwLjAyNTlDNjEuODc0NiAzMC4wMjU5IDQxLjEwODEgMjcuMTUxMiA0MS4xMDgxIDI3LjE1MTJWMjYuNjM0MUM0MS4xMDgxIDI2LjYzNDEgNTYuNDg3OSAyOC42ODgxIDk1LjU1NTYgMjguNjg4MUMxMzQuNjIzIDI4LjY4ODEgMTUwIDI2LjYzNDEgMTUwIDI2LjYzNDFWMjcuMTMxNVoiIGZpbGw9IndoaXRlIi8+CjwvZz4KPC9zdmc+Cg==';
+  let ds='—',dsFile='XXXXXXXX';
+  if(d.dataRef){ds=(d.dataRef instanceof Date)?d.dataRef.toLocaleDateString('pt-BR'):String(d.dataRef);const pts=ds.split('/');if(pts.length===3)dsFile=pts[0]+pts[1]+pts[2];}
+  const pddPct=d.dcTotal>0?d.pdd/d.dcTotal*100:0;
+  const _b=function(v){return(v==null||isNaN(v))?'—':'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  const _p=function(v,dec){dec=dec||2;return(v==null||isNaN(v))?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec})+'%';};
+  const _sc=function(val,min){return val>=min+3?'#2E7D32':val>=min-3?'#b45309':'#C62828';};
+  const _sb=function(val,min){return val>=min+3?'#f0fdf4':val>=min-3?'#fffbeb':'#fff5f5';};
+  const _sl=function(val,min){return val>=min+3?'Enquadrado':val>=min-3?'Atenção':'Desenquadrado';};
+  const razTable=(d.razoes||[]).map(function(rz){const col=_sc(rz.pct,rz.min),bg=_sb(rz.pct,rz.min),lbl=_sl(rz.pct,rz.min),folga=rz.pct-rz.min;return '<tr style="border-bottom:1px solid #e5e7eb"><td style="padding:8px 11px;font-size:10.5pt;font-weight:700;color:#1F3A5F">Razão — '+rz.label+'</td><td style="padding:8px 11px;font-size:12pt;font-weight:700;color:'+col+';text-align:right">'+_p(rz.pct)+'</td><td style="padding:8px 11px;font-size:10pt;color:#6B7280;text-align:center">'+_p(rz.min)+'</td><td style="padding:8px 11px;font-size:10pt;font-weight:700;color:'+col+';text-align:center">'+(folga>=0?'+':'')+_p(folga)+'</td><td style="padding:8px 11px;text-align:center"><span style="background:'+bg+';color:'+col+';border:1px solid '+col+';border-radius:20px;padding:2px 10px;font-size:9pt;font-weight:700">'+lbl+'</span></td></tr>';}).join('');
+  const totalSub=(d.subs||[]).reduce(function(a,s){return a+(d.igMap[s.toUpperCase()]&&d.igMap[s.toUpperCase()].pl||0);},0);
+  const subTable=(d.subs||[]).map(function(s,i){const info=d.igMap[s.toUpperCase()]||{};const vr=info.var!=null?info.var:null;const col=vr>0?'#2E7D32':vr<0?'#C62828':'#333';return '<tr style="background:'+(i%2===0?'#fff':'#f9fafb')+'"><td style="padding:7px 11px;font-size:10.5pt;font-weight:700;color:#0E2A47">'+s+'</td><td style="padding:7px 11px;font-size:10.5pt;text-align:right">'+_b(info.pl)+'</td><td style="padding:7px 11px;font-size:9pt;text-align:right;color:#6B7280">'+(info.cota!=null?info.cota.toFixed(8):'—')+'</td><td style="padding:7px 11px;font-size:10.5pt;text-align:right;font-weight:700;color:'+col+'">'+(vr!=null?vr.toFixed(4)+'%':'—')+'</td></tr>';}).join('')+'<tr style="background:#eff6ff;border-top:2px solid #2F5D8C"><td style="padding:8px 11px;font-size:10.5pt;font-weight:700;color:#0E2A47">Total Subclasses</td><td style="padding:8px 11px;font-size:11pt;font-weight:700;color:#0E2A47;text-align:right">'+_b(totalSub)+'</td><td></td><td></td></tr>';
+  const srs=(d.subs||[]).filter(function(s){return s.toUpperCase().includes('SR');}).reduce(function(a,s){return a+(d.igMap[s.toUpperCase()]&&d.igMap[s.toUpperCase()].pl||0);},0);
+  const mzs=(d.subs||[]).filter(function(s){return s.toUpperCase().includes('MZ');}).reduce(function(a,s){return a+(d.igMap[s.toUpperCase()]&&d.igMap[s.toUpperCase()].pl||0);},0);
+  const sbs=(d.igMap['FIDC CEDAR SB']&&d.igMap['FIDC CEDAR SB'].pl)||0;
+  const tot=srs+mzs+sbs||1;
+  const mkBar=function(nm,v,col,base){const pv=(v/(base||1)*100).toFixed(1);return '<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:10.5pt;font-weight:700;color:#333">'+nm+'</span><span><strong style="color:'+col+';font-size:10.5pt">'+_b(v)+'</strong><span style="font-size:9pt;color:#9CA3AF;margin-left:5px">'+pv+'%</span></span></div><div style="background:#E5E7EB;border-radius:3px;height:8px;overflow:hidden"><div style="background:'+col+';height:100%;width:'+Math.min(100,v/(base||1)*100).toFixed(1)+'%;border-radius:3px"></div></div></div>';};
+  const stressI=(d.razoes||[]).map(function(rz){
+    var plMax=rz.min>0?rz.num/(rz.min/100):0;
+    var space=plMax-d.plTotal;
+    var ok=space>0;
+    var pct=d.plTotal>0?(space/d.plTotal*100):0;
+    var sign=ok?'+':'';
+    return '<div style="flex:1;border:1px solid '+(ok?'#BFDBFE':'#FECACA')+';border-radius:6px;padding:12px 14px;border-left:4px solid '+(ok?'#2F5D8C':'#C62828')+';background:#fff;min-width:0">'
+      +'<div style="font-size:7.5pt;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">'+rz.label+'</div>'
+      +'<div style="font-size:8pt;color:#6B7280;margin-bottom:4px">Pode integralizar até:</div>'
+      +'<div style="font-size:15pt;font-weight:700;color:'+(ok?'#2F5D8C':'#C62828')+'">'+_b(space)+'</div>'
+      +'<div style="font-size:7.5pt;color:'+(ok?'#2E7D32':'#C62828')+';margin-top:4px;font-weight:600">('+sign+_p(pct)+' do PL atual)</div>'
+      +'</div>';
+  }).join('')
+  const stressP=(d.razoes||[]).map(function(rz){
+    var mf=rz.min/100;
+    var maxP=rz.num-mf*d.plTotal;
+    var ok=maxP>0;
+    var pct=rz.num>0?(maxP/rz.num*100):0;
+    return '<div style="flex:1;border:1px solid '+(ok?'#FED7AA':'#FECACA')+';border-radius:6px;padding:12px 14px;border-left:4px solid '+(ok?'#d97706':'#C62828')+';background:#fff;min-width:0">'
+      +'<div style="font-size:7.5pt;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">'+rz.label+'</div>'
+      +'<div style="font-size:8pt;color:#6B7280;margin-bottom:4px">Pode absorver até:</div>'
+      +'<div style="font-size:15pt;font-weight:700;color:'+(ok?'#d97706':'#C62828')+'">'+_b(maxP)+'</div>'
+      +'<div style="font-size:7.5pt;color:'+(ok?'#d97706':'#C62828')+';margin-top:4px;font-weight:600">'+(ok?'Margem antes do desenquadramento':'ABAIXO DO MÍNIMO')+'</div>'
+      +'</div>';
+  }).join('');
+
+  const HDR=function(pn){return '<div style="background:#0E2A47;padding:13px 20px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:14px"><img src="'+LOGO_URI+'" style="height:22px;width:auto;display:block" alt="Octante"><div style="width:1px;height:26px;background:rgba(255,255,255,.2)"></div><div><div style="color:#fff;font-size:9.5pt;font-weight:700">'+f.full+'</div><div style="color:#93C5FD;font-size:7pt;margin-top:1px">CNPJ: '+(f.cnpj||'46.268.360/0001-70')+'  ·  Admr.: Vortx DTVM  ·  Gestor: Octante Gestora</div></div></div><div style="text-align:right"><div style="color:#93C5FD;font-size:8pt;font-weight:700;text-transform:uppercase">Relatório Diário</div><div style="color:#BFDBFE;font-size:7.5pt;margin-top:2px">Data-base: '+ds+'  ·  Pág. '+pn+'/2</div></div></div>';};
+  const FTR='<div style="background:#0E2A47;padding:6px 20px;display:flex;justify-content:space-between;align-items:center"><span style="color:#93C5FD;font-size:7pt">Rentabilidade passada não representa garantia futura. Uso interno. Octante Gestora Ltda.</span><span style="color:#BFDBFE;font-size:7pt">Fonte: Vortx  ·  '+ds+'</span></div>';
+  const SECBAR=function(txt,bg){bg=bg||'#0E2A47';return '<div style="background:'+bg+';color:#fff;font-size:8.5pt;font-weight:700;padding:5px 11px;border-radius:3px;margin:10px 0 6px;letter-spacing:.04em;text-transform:uppercase">'+txt+'</div>';};
+  
+  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatorio Diario - FIDC '+f.short+' - '+dsFile+'</title>'
+  +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#333;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+  +'.no-print{text-align:center;padding:12px;background:#f4f6f8;border-bottom:2px solid #0E2A47;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}'
+  +'.no-print button{padding:8px 18px;border-radius:5px;border:none;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}'
+  +'.bp{background:#0E2A47;color:#fff}'
+  +'.page{width:210mm;min-height:297mm;position:relative;background:#fff;padding-bottom:24px}'
+  +'.content{padding:10px 20px 12px}'
+  +'.strip{background:#f4f6f8;border-top:1px solid #d9d9d9;border-bottom:1px solid #d9d9d9;padding:6px 0;margin-bottom:10px}'
+  +'.cards{display:flex;gap:8px;margin-bottom:9px;flex-wrap:wrap}'
+  +'.card{flex:1;min-width:100px;border:1px solid #d9d9d9;border-radius:4px;padding:10px 12px;position:relative;overflow:hidden;background:#fff}'
+  +'.card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}'
+  +'.cn::before{background:#0E2A47}.cd::before{background:#1F3A5F}.cr::before{background:#C62828}.cg::before{background:#2E7D32}'
+  +'.clbl{font-size:7.5pt;font-weight:700;color:#6B7280;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}'
+  +'.cval{font-size:13pt;font-weight:700;margin-bottom:2px;line-height:1.2}'
+  +'.band{background:#0E2A47;color:#fff;padding:10px 14px;border-radius:4px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between}'
+  +'table{width:100%;border-collapse:collapse}'
+  +'thead th{background:#0E2A47;color:#fff;padding:7px 11px;font-size:8pt;font-weight:700}'
+  +'thead th:first-child{text-align:left}thead th:not(:first-child){text-align:right}thead th.tc{text-align:center}'
+  +'@media print{.no-print{display:none!important}@page{size:A4;margin:0}.page{page-break-after:always}}'
+  +'</style></head><body>'
+  +'<div class="no-print">'
+  +'<button class="bp" onclick="document.title=\'Relatorio Diario - FIDC '+f.short+' - '+dsFile+'\';window.print()">🖨️ Imprimir / Salvar PDF</button>'
+  +'<span style="font-size:10px;color:#9ca3af">Nome sugerido: Relatorio Diario - FIDC '+f.short+' - '+dsFile+'.pdf</span>'
+  +'</div>'
+
+  // PAGE 1
+  +'<div class="page">'+HDR(1)+'<div class="content">'
+  +'<div class="strip"><div style="font-size:10pt;font-weight:700;color:#0E2A47;margin-bottom:2px">'+f.full+'</div>'
+  +'<div style="font-size:8pt;color:#6B7280">Posição: '+ds+'  ·  Admr.: Vortx DTVM Ltda.  ·  Gestor: Octante Gestora Ltda.</div></div>'
+  +SECBAR('1. Indicadores Principais')
+  +'<div class="cards">'
+  +'<div class="card cn"><div class="clbl">Patrimônio Líquido</div><div class="cval" style="color:#0E2A47">'+_b(d.plTotal)+'</div></div>'
+  +'<div class="card cd"><div class="clbl">Direitos Creditórios</div><div class="cval" style="color:#1F3A5F">'+_b(d.dcTotal)+'</div></div>'
+  +'<div class="card cr"><div class="clbl">PDD — Provisão</div><div class="cval" style="color:#C62828">('+_b(d.pdd)+')</div>'
+  +'<div style="margin-top:5px;display:inline-block;background:#fff0f0;border:1px solid #C62828;border-radius:3px;padding:2px 8px;font-size:9pt;font-weight:700;color:#C62828">⚠ PDD/DC: '+_p(pddPct)+'</div></div>'
+  +'<div class="card cg"><div class="clbl">Caixa Disponível</div><div class="cval" style="color:#2E7D32">'+_b(d.caixa)+'</div></div>'
+  +'<div class="card" style="border-top:3px solid #7C3AED"><div class="clbl">VALID</div><div class="cval" style="color:#7C3AED">'+_b(d.valid||0)+'</div></div>'
+  +'</div>'
+  +'<div class="band">'
+  +'<div><div style="font-size:7.5pt;color:#93C5FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">% DC / Patrimônio Líquido</div>'
+  +'<div style="font-size:22pt;font-weight:700;color:#fff;line-height:1">'+_p(d.pctDC)+'</div></div>'
+  +'<div style="text-align:right;font-size:8.5pt;color:#BFDBFE;line-height:2">'
+  +'<div>DC Líquido:&nbsp;<strong style="color:#fff">'+_b(d.dcLiq)+'</strong></div>'
+  +'<div>% PDD/DC:&nbsp;<strong style="color:#FCA5A5">'+_p(pddPct)+'</strong></div>'
+  +'</div></div>'
+  +SECBAR('2. Razões de Garantia — Subordinação')
+  +'<table style="margin-bottom:9px"><thead><tr><th style="text-align:left">Índice</th><th>Atual</th><th class="tc">Mínimo Reg.</th><th class="tc">Folga</th><th class="tc">Status</th></tr></thead><tbody>'+razTable+'</tbody></table>'
+  +SECBAR('3. PL por Subclasse')
+  +'<table><thead><tr><th style="text-align:left">Subclasse</th><th>PL (R$)</th><th>Valor da Cota</th><th>Var. Diária</th></tr></thead><tbody>'+subTable+'</tbody></table>'
+  +'</div>'+FTR+'</div>'
+
+  // PAGE 2
+  +'<div class="page">'+HDR(2)+'<div class="content">'
+  +'<div class="strip"><div style="font-size:10pt;font-weight:700;color:#0E2A47">Stress Test · Composição · Posição: '+ds+'</div></div>'
+  +SECBAR('4. Stress Test — Integralização','#1F3A5F')
+  +'<div style="font-size:8pt;color:#6B7280;margin-bottom:7px">Valor máximo que pode ser integralizado antes do desenquadramento de cada índice.</div>'
+  +'<div style="display:flex;gap:8px;margin-bottom:12px">'+stressI+'</div>'
+  +SECBAR('5. Stress Test — Absorção de Perdas','#C62828')
+  +'<div style="font-size:8pt;color:#6B7280;margin-bottom:7px">Perda máxima que o fundo pode absorver antes do desenquadramento de cada índice.</div>'
+  +'<div style="display:flex;gap:8px;margin-bottom:12px">'+stressP+'</div>'
+  +SECBAR('6. Composição e Alocação')
+  +'<div style="display:flex;gap:12px;margin-bottom:11px">'
+  +'<div style="flex:1;border:1px solid #D9D9D9;border-radius:4px;overflow:hidden">'
+  +'<div style="background:#f4f6f8;padding:7px 12px;border-bottom:1px solid #D9D9D9;font-size:8.5pt;font-weight:700;color:#0E2A47;text-transform:uppercase">PL por Classe de Cotas</div>'
+  +'<div style="padding:12px">'+mkBar('Sênior',srs,'#0E2A47',tot)+mkBar('Mezanino',mzs,'#2F5D8C',tot)+mkBar('Subordinada (SB)',sbs,'#3B82F6',tot)
+  +'<div style="border-top:1px solid #E5E7EB;padding-top:8px;margin-top:2px;display:flex;justify-content:space-between">'
+  +'<span style="font-size:10pt;font-weight:700;color:#0E2A47">Total</span>'
+  +'<span style="font-size:11pt;font-weight:700;color:#0E2A47">'+_b(d.plTotal)+'</span></div></div></div>'
+  +'<div style="flex:1;border:1px solid #D9D9D9;border-radius:4px;overflow:hidden">'
+  +'<div style="background:#f4f6f8;padding:7px 12px;border-bottom:1px solid #D9D9D9;font-size:8.5pt;font-weight:700;color:#0E2A47;text-transform:uppercase">Alocação do Portfólio</div>'
+  +'<div style="padding:12px">'+mkBar('DC Líquido',d.dcLiq,'#1F3A5F',d.plTotal)+mkBar('Caixa Disponível',d.caixa,'#2E7D32',d.plTotal)+mkBar('PDD (Provisão)',d.pdd,'#C62828',d.plTotal)
+  +'<div style="border-top:1px solid #E5E7EB;padding-top:8px;margin-top:2px;display:flex;justify-content:space-between">'
+  +'<span style="font-size:10pt;font-weight:700;color:#C62828">% PDD / DC Bruto</span>'
+  +'<span style="font-size:13pt;font-weight:700;color:#C62828">'+_p(pddPct)+'</span></div></div></div></div>'
+  +'<div style="background:#f4f6f8;border:1px solid #D9D9D9;border-radius:4px;padding:11px;border-left:4px solid #0E2A47">'
+  +'<div style="font-size:8.5pt;font-weight:700;color:#0E2A47;margin-bottom:5px;text-transform:uppercase">Aviso Legal</div>'
+  +'<div style="font-size:8pt;color:#6B7280;line-height:1.75">A rentabilidade obtida no passado não representa garantia de rentabilidade futura. O fundo não conta com garantia do gestor, do administrador ou de qualquer mecanismo de seguro, inclusive do FGC. As informações deste relatório têm caráter informativo e foram elaboradas pela <strong>Octante Gestora Ltda.</strong> para uso interno e restrito.'
+  +'<br>Fonte: Portal Vortx &nbsp;·&nbsp; CNPJ: '+(f.cnpj||'46.268.360/0001-70')+' &nbsp;·&nbsp; Data: '+ds+'</div></div>'
+  +'</div>'+FTR+'</div>'
+  +'</body></html>';
+
+  const w=window.open('','_blank');
+  if(!w){alert('Permita pop-ups para usar esta função.');return;}
+  w.document.open();w.document.write(html);w.document.close();
+  w.octPrint=function(){w.document.title='Relatorio Diario - FIDC '+f.short+' - '+dsFile;w.print();};
+  setTimeout(function(){try{w.focus();}catch(e){}},200);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// DEBUG / HISTORY UTILS
+// ══════════════════════════════════════════════════════════════
+function debugHistory() {
+  var hist=history[active];
+  var keys=Object.keys(hist).sort();
+  if(!keys.length){alert('Nenhum histórico salvo para '+FUNDS[active].short+'.\n\nImporte arquivos de carteiras em datas diferentes.');return;}
+  var msg='Histórico — '+FUNDS[active].short+'\n('+keys.length+' ponto(s))\n\n';
+  keys.forEach(function(k){var h=hist[k];msg+=k+'  →  PL: R$'+(h.pl/1e6).toFixed(2)+'M  |  DC: R$'+(h.dc/1e6).toFixed(2)+'M\n';});
+  alert(msg);
+}
+
+function clearHistory() {
+  if(!confirm('Limpar TODO o histórico de '+FUNDS[active].short+'?')) return;
+  history[active]={};
+  try{localStorage.removeItem('oct5h_'+FUNDS[active].key);}catch(e){}
+  alert('Histórico limpo.');
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+loadState();
+dotRefresh();
+if(cache[0]){render(cache[0],0);}
+else{document.getElementById('upload-screen').style.display='flex';document.getElementById('dashboard').style.display='none';}
+
+// ResizeObserver: force chart redraw when charts panel becomes visible
+(function() {
+  var chartsPanel = document.getElementById('tab-charts');
+  if (!chartsPanel || typeof ResizeObserver === 'undefined') return;
+  var ro = new ResizeObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+        var histLen = history[active] ? Object.keys(history[active]).length : 0;
+        if (histLen > 0 || cache[active]) {
+          setTimeout(function() { renderCharts(active); }, 50);
+        }
+      }
+    });
+  });
+  ro.observe(chartsPanel);
+})();
+</script>
+</body>
+</html>
